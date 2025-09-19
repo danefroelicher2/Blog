@@ -7,7 +7,8 @@
     "start": "npx live-server --port=3000 --open=/index.html",
     "dev": "npx live-server --port=3000 --open=/index.html --watch=.",
     "serve": "npx http-server -p 3000 -o",
-    "preview": "npx serve -s . -l 3000"
+    "preview": "npx serve -s . -l 3000",
+    "deploy": "git add . && git commit -m 'Deploy to GitHub Pages' && git push origin main"
   },
   "keywords": [
     "blog",
@@ -24,7 +25,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/my-blog.git"
+    "url": "https://github.com/danefroelicher2/my-blog.git"
   },
-  "homepage": "https://yourusername.github.io/my-blog"
+  "homepage": "https://danefroelicher2.github.io/my-blog"
 }
