@@ -1,0 +1,30 @@
+{
+  "name": "my-modern-blog",
+  "version": "1.0.0",
+  "description": "A modern blog site built with vanilla JavaScript",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx live-server --port=3000 --open=/index.html",
+    "dev": "npx live-server --port=3000 --open=/index.html --watch=.",
+    "serve": "npx http-server -p 3000 -o",
+    "preview": "npx serve -s . -l 3000"
+  },
+  "keywords": [
+    "blog",
+    "vanilla-javascript",
+    "github-pages",
+    "single-page-application"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "live-server": "^1.2.2",
+    "http-server": "^14.1.1",
+    "serve": "^14.2.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/my-blog.git"
+  },
+  "homepage": "https://yourusername.github.io/my-blog"
+}

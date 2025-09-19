@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Modern Blog</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-tertiary: #3a3a3a;
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --text-muted: #808080;
+            --accent: #4a90e2;
+            --accent-hover: #357abd;
+            --border: #404040;
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background-color: var(--bg-primary);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 300;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 40px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: #4a4a4a;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-secondary);
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px var(--shadow);
+        }
+
+        .modal h2 {
+            margin-bottom: 20px;
+            color: var(--text-primary);
+            font-weight: 400;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 200px;
+            font-family: inherit;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+
+        .posts-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .post {
+            background: var(--bg-secondary);
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .post:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px var(--shadow);
+        }
+
+        .post-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .post-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .post-meta {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .post-content {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1.7;
+            white-space: pre-wrap;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            font-weight: 400;
+        }
+
+        .close {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-muted);
+            padding: 5px;
+            border-radius: 4px;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: var(--text-primary);
+            background: var(--bg-tertiary);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .modal-content {
+                padding: 20px;
+                margin: 20px;
+                width: calc(100% - 40px);
+            }
+
+            .post {
+                padding: 20px;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            button {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .modal-actions {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>My Modern Blog</h1>
+            <p class="subtitle">Share your thoughts with the world</p>
+        </header>
+
+        <div class="controls">
+            <button id="createPostBtn">Create Post</button>
+            <button id="exportBtn" class="btn-secondary">Export Posts</button>
+        </div>
+
+        <div id="postsContainer" class="posts-container">
+            <div class="empty-state">
+                <h3>No posts yet</h3>
+                <p>Click "Create Post" to write your first blog post!</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="createPostModal" class="modal">
+        <div class="modal-content">
+            <button class="close" id="closeModal">&times;</button>
+            <h2>Create New Post</h2>
+            <form id="postForm">
+                <div class="form-group">
+                    <label for="postTitle">Title</label>
+                    <input type="text" id="postTitle" required placeholder="Enter your post title...">
+                </div>
+                <div class="form-group">
+                    <label for="postContent">Content</label>
+                    <textarea id="postContent" required placeholder="Write your post content here..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="cancelBtn" class="btn-secondary">Cancel</button>
+                    <button type="submit">Post</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        class BlogApp {
+            constructor() {
+                this.posts = this.loadPosts();
+                this.initEventListeners();
+                this.renderPosts();
+            }
+
+            initEventListeners() {
+                const createPostBtn = document.getElementById('createPostBtn');
+                const closeModal = document.getElementById('closeModal');
+                const cancelBtn = document.getElementById('cancelBtn');
+                const postForm = document.getElementById('postForm');
+                const exportBtn = document.getElementById('exportBtn');
+                const modal = document.getElementById('createPostModal');
+
+                createPostBtn.addEventListener('click', () => this.openModal());
+                closeModal.addEventListener('click', () => this.closeModal());
+                cancelBtn.addEventListener('click', () => this.closeModal());
+                exportBtn.addEventListener('click', () => this.exportPosts());
+                postForm.addEventListener('submit', (e) => this.handleSubmit(e));
+
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        this.closeModal();
+                    }
+                });
+
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        this.closeModal();
+                    }
+                });
+            }
+
+            openModal() {
+                const modal = document.getElementById('createPostModal');
+                modal.style.display = 'block';
+                document.getElementById('postTitle').focus();
+                document.body.style.overflow = 'hidden';
+            }
+
+            closeModal() {
+                const modal = document.getElementById('createPostModal');
+                modal.style.display = 'none';
+                document.getElementById('postForm').reset();
+                document.body.style.overflow = 'auto';
+            }
+
+            handleSubmit(e) {
+                e.preventDefault();
+
+                const title = document.getElementById('postTitle').value.trim();
+                const content = document.getElementById('postContent').value.trim();
+
+                if (!title || !content) {
+                    alert('Please fill in both title and content.');
+                    return;
+                }
+
+                const post = {
+                    id: Date.now(),
+                    title,
+                    content,
+                    timestamp: new Date().toISOString(),
+                    dateString: new Date().toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })
+                };
+
+                this.posts.unshift(post);
+                this.savePosts();
+                this.renderPosts();
+                this.closeModal();
+
+                this.showSuccessMessage('Post created successfully!');
+            }
+
+            showSuccessMessage(message) {
+                const toast = document.createElement('div');
+                toast.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: var(--accent);
+                    color: white;
+                    padding: 15px 20px;
+                    border-radius: 6px;
+                    z-index: 2000;
+                    font-weight: 500;
+                    box-shadow: 0 4px 12px var(--shadow);
+                    transform: translateX(100%);
+                    transition: transform 0.3s ease;
+                `;
+                toast.textContent = message;
+                document.body.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.style.transform = 'translateX(0)';
+                }, 100);
+
+                setTimeout(() => {
+                    toast.style.transform = 'translateX(100%)';
+                    setTimeout(() => {
+                        document.body.removeChild(toast);
+                    }, 300);
+                }, 3000);
+            }
+
+            renderPosts() {
+                const container = document.getElementById('postsContainer');
+
+                if (this.posts.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <h3>No posts yet</h3>
+                            <p>Click "Create Post" to write your first blog post!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = this.posts.map(post => `
+                    <article class="post">
+                        <div class="post-header">
+                            <h2 class="post-title">${this.escapeHtml(post.title)}</h2>
+                            <div class="post-meta">Posted on ${post.dateString}</div>
+                        </div>
+                        <div class="post-content">${this.escapeHtml(post.content)}</div>
+                    </article>
+                `).join('');
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            loadPosts() {
+                try {
+                    const stored = localStorage.getItem('blogPosts');
+                    return stored ? JSON.parse(stored) : [];
+                } catch (error) {
+                    console.error('Error loading posts:', error);
+                    return [];
+                }
+            }
+
+            savePosts() {
+                try {
+                    localStorage.setItem('blogPosts', JSON.stringify(this.posts));
+                } catch (error) {
+                    console.error('Error saving posts:', error);
+                    alert('Error saving posts. Please try again.');
+                }
+            }
+
+            exportPosts() {
+                if (this.posts.length === 0) {
+                    alert('No posts to export!');
+                    return;
+                }
+
+                const exportData = {
+                    exportDate: new Date().toISOString(),
+                    totalPosts: this.posts.length,
+                    posts: this.posts
+                };
+
+                const dataStr = JSON.stringify(exportData, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(dataBlob);
+                link.download = `blog-posts-${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+
+                URL.revokeObjectURL(link.href);
+                this.showSuccessMessage('Posts exported successfully!');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new BlogApp();
+        });
+    </script>
+</body>
+</html>
