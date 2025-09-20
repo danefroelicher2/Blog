@@ -66,6 +66,117 @@
             flex-wrap: wrap;
         }
 
+        .admin-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg-secondary);
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .admin-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4ade80;
+        }
+
+        .admin-text {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-size: 0.9rem;
+            margin-top: 8px;
+            display: none;
+        }
+
+        .header-admin-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            border: 1px solid var(--border);
+            display: none;
+        }
+
+        .header-admin-indicator.active {
+            display: block;
+        }
+
+        .stay-logged-in {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 15px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .stay-logged-in input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+
+        .timeout-warning {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-secondary);
+            border: 2px solid #f59e0b;
+            border-radius: 12px;
+            padding: 20px;
+            z-index: 2000;
+            min-width: 300px;
+            text-align: center;
+            box-shadow: 0 20px 40px var(--shadow);
+            display: none;
+        }
+
+        .timeout-warning h3 {
+            color: #f59e0b;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .timeout-warning p {
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+        }
+
+        .timeout-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .no-select {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
         button {
             background: var(--accent);
             color: white;
@@ -285,12 +396,20 @@
 <body>
     <div class="container">
         <header>
+            <div id="headerAdminIndicator" class="header-admin-indicator">🔒 Admin Mode</div>
             <h1>My Modern Blog</h1>
             <p class="subtitle">Share your thoughts with the world</p>
         </header>
 
+        <div id="adminStatus" class="admin-status" style="display: none;">
+            <div class="admin-indicator"></div>
+            <span class="admin-text">Logged in as Admin</span>
+            <button id="logoutBtn" class="btn-danger" style="padding: 4px 12px; font-size: 0.8rem;">Logout</button>
+        </div>
+
         <div class="controls">
-            <button id="createPostBtn">Create Post</button>
+            <button id="createPostBtn" style="display: none;">Create Post</button>
+            <button id="adminLoginBtn">Admin Login</button>
             <button id="exportBtn" class="btn-secondary">Export Posts</button>
         </div>
 
@@ -323,12 +442,187 @@
         </div>
     </div>
 
+    <div id="adminLoginModal" class="modal no-select">
+        <div class="modal-content">
+            <button class="close" id="closeAdminModal">&times;</button>
+            <h2>Admin Login</h2>
+            <form id="adminLoginForm">
+                <div class="form-group">
+                    <label for="adminPassword">Password</label>
+                    <input type="password" id="adminPassword" required placeholder="Enter admin password...">
+                    <div id="loginError" class="error-message">Incorrect password. Please try again.</div>
+                </div>
+                <div class="stay-logged-in">
+                    <input type="checkbox" id="stayLoggedIn">
+                    <label for="stayLoggedIn">Stay logged in (persist through refresh)</label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="cancelAdminBtn" class="btn-secondary">Cancel</button>
+                    <button type="submit">Login</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="timeoutWarning" class="timeout-warning">
+        <h3>⚠️ Session Expiring Soon</h3>
+        <p>Your admin session will expire in <span id="timeoutCountdown">5:00</span> due to inactivity.</p>
+        <div class="timeout-actions">
+            <button id="extendSession" class="btn-secondary">Extend Session</button>
+            <button id="logoutNow" class="btn-danger">Logout Now</button>
+        </div>
+    </div>
+
     <script>
         class BlogApp {
             constructor() {
                 this.posts = this.loadPosts();
+                this.adminPassword = this.hashPassword('myblog2024admin');
+                this.sessionTimeout = 2 * 60 * 60 * 1000; // 2 hours
+                this.warningTime = 5 * 60 * 1000; // 5 minutes
+                this.sessionTimer = null;
+                this.warningTimer = null;
+                this.countdownInterval = null;
+                this.lastActivity = Date.now();
+
                 this.initEventListeners();
                 this.renderPosts();
+                this.checkExistingSession();
+                this.initActivityTracking();
+                this.initSecurityFeatures();
+            }
+
+            hashPassword(password) {
+                let hash = 0;
+                const salt = 'myblogsalt2024';
+                const combined = password + salt;
+                for (let i = 0; i < combined.length; i++) {
+                    const char = combined.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash;
+                }
+                return hash.toString(36);
+            }
+
+            isAdminLoggedIn() {
+                const sessionAuth = sessionStorage.getItem('adminLoggedIn') === 'true';
+                const persistAuth = localStorage.getItem('adminPersistent') === 'true';
+                return sessionAuth || persistAuth;
+            }
+
+            checkExistingSession() {
+                if (localStorage.getItem('adminPersistent') !== 'true') {
+                    sessionStorage.removeItem('adminLoggedIn');
+                }
+                this.updateAdminUI();
+                if (this.isAdminLoggedIn()) {
+                    this.startSessionTimer();
+                }
+            }
+
+            updateAdminUI() {
+                const createPostBtn = document.getElementById('createPostBtn');
+                const adminLoginBtn = document.getElementById('adminLoginBtn');
+                const adminStatus = document.getElementById('adminStatus');
+                const headerIndicator = document.getElementById('headerAdminIndicator');
+
+                if (this.isAdminLoggedIn()) {
+                    createPostBtn.style.display = 'block';
+                    adminLoginBtn.style.display = 'none';
+                    adminStatus.style.display = 'flex';
+                    headerIndicator.classList.add('active');
+                } else {
+                    createPostBtn.style.display = 'none';
+                    adminLoginBtn.style.display = 'block';
+                    adminStatus.style.display = 'none';
+                    headerIndicator.classList.remove('active');
+                }
+            }
+
+            initActivityTracking() {
+                const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+                events.forEach(event => {
+                    document.addEventListener(event, () => {
+                        if (this.isAdminLoggedIn()) {
+                            this.lastActivity = Date.now();
+                            this.resetSessionTimer();
+                        }
+                    }, true);
+                });
+            }
+
+            initSecurityFeatures() {
+                const adminModal = document.getElementById('adminLoginModal');
+                adminModal.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    return false;
+                });
+
+                setInterval(() => {
+                    if (this.isAdminLoggedIn() && this.isDevToolsOpen()) {
+                        this.showSuccessMessage('Developer tools detected. Logging out for security.');
+                        this.logout();
+                    }
+                }, 1000);
+            }
+
+            isDevToolsOpen() {
+                const threshold = 160;
+                return window.outerHeight - window.innerHeight > threshold ||
+                       window.outerWidth - window.innerWidth > threshold;
+            }
+
+            startSessionTimer() {
+                this.clearTimers();
+
+                this.warningTimer = setTimeout(() => {
+                    this.showTimeoutWarning();
+                }, this.sessionTimeout - this.warningTime);
+
+                this.sessionTimer = setTimeout(() => {
+                    this.logout();
+                    this.showSuccessMessage('Session expired due to inactivity.');
+                }, this.sessionTimeout);
+            }
+
+            resetSessionTimer() {
+                if (this.isAdminLoggedIn()) {
+                    this.hideTimeoutWarning();
+                    this.startSessionTimer();
+                }
+            }
+
+            clearTimers() {
+                if (this.sessionTimer) clearTimeout(this.sessionTimer);
+                if (this.warningTimer) clearTimeout(this.warningTimer);
+                if (this.countdownInterval) clearInterval(this.countdownInterval);
+            }
+
+            showTimeoutWarning() {
+                const warning = document.getElementById('timeoutWarning');
+                warning.style.display = 'block';
+
+                let timeLeft = this.warningTime / 1000;
+                const countdown = document.getElementById('timeoutCountdown');
+
+                this.countdownInterval = setInterval(() => {
+                    const minutes = Math.floor(timeLeft / 60);
+                    const seconds = timeLeft % 60;
+                    countdown.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    timeLeft--;
+
+                    if (timeLeft < 0) {
+                        clearInterval(this.countdownInterval);
+                    }
+                }, 1000);
+            }
+
+            hideTimeoutWarning() {
+                const warning = document.getElementById('timeoutWarning');
+                warning.style.display = 'none';
+                if (this.countdownInterval) {
+                    clearInterval(this.countdownInterval);
+                }
             }
 
             initEventListeners() {
@@ -339,11 +633,30 @@
                 const exportBtn = document.getElementById('exportBtn');
                 const modal = document.getElementById('createPostModal');
 
+                const adminLoginBtn = document.getElementById('adminLoginBtn');
+                const closeAdminModal = document.getElementById('closeAdminModal');
+                const cancelAdminBtn = document.getElementById('cancelAdminBtn');
+                const adminLoginForm = document.getElementById('adminLoginForm');
+                const adminModal = document.getElementById('adminLoginModal');
+                const logoutBtn = document.getElementById('logoutBtn');
+
+                const extendSessionBtn = document.getElementById('extendSession');
+                const logoutNowBtn = document.getElementById('logoutNow');
+
                 createPostBtn.addEventListener('click', () => this.openModal());
                 closeModal.addEventListener('click', () => this.closeModal());
                 cancelBtn.addEventListener('click', () => this.closeModal());
                 exportBtn.addEventListener('click', () => this.exportPosts());
                 postForm.addEventListener('submit', (e) => this.handleSubmit(e));
+
+                adminLoginBtn.addEventListener('click', () => this.openAdminModal());
+                closeAdminModal.addEventListener('click', () => this.closeAdminModal());
+                cancelAdminBtn.addEventListener('click', () => this.closeAdminModal());
+                adminLoginForm.addEventListener('submit', (e) => this.handleAdminLogin(e));
+                logoutBtn.addEventListener('click', () => this.logout());
+
+                extendSessionBtn.addEventListener('click', () => this.extendSession());
+                logoutNowBtn.addEventListener('click', () => this.logout());
 
                 modal.addEventListener('click', (e) => {
                     if (e.target === modal) {
@@ -351,11 +664,26 @@
                     }
                 });
 
+                adminModal.addEventListener('click', (e) => {
+                    if (e.target === adminModal) {
+                        this.closeAdminModal();
+                    }
+                });
+
                 document.addEventListener('keydown', (e) => {
                     if (e.key === 'Escape') {
                         this.closeModal();
+                        this.closeAdminModal();
+                        this.hideTimeoutWarning();
                     }
                 });
+            }
+
+            extendSession() {
+                this.lastActivity = Date.now();
+                this.resetSessionTimer();
+                this.hideTimeoutWarning();
+                this.showSuccessMessage('Session extended successfully!');
             }
 
             openModal() {
@@ -372,8 +700,63 @@
                 document.body.style.overflow = 'auto';
             }
 
+            openAdminModal() {
+                const modal = document.getElementById('adminLoginModal');
+                modal.style.display = 'block';
+                document.getElementById('adminPassword').focus();
+                document.body.style.overflow = 'hidden';
+                document.getElementById('loginError').style.display = 'none';
+            }
+
+            closeAdminModal() {
+                const modal = document.getElementById('adminLoginModal');
+                modal.style.display = 'none';
+                document.getElementById('adminLoginForm').reset();
+                document.getElementById('loginError').style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+
+            handleAdminLogin(e) {
+                e.preventDefault();
+                const password = document.getElementById('adminPassword').value;
+                const stayLoggedIn = document.getElementById('stayLoggedIn').checked;
+                const errorDiv = document.getElementById('loginError');
+
+                const hashedInput = this.hashPassword(password);
+                if (hashedInput === this.adminPassword) {
+                    sessionStorage.setItem('adminLoggedIn', 'true');
+                    if (stayLoggedIn) {
+                        localStorage.setItem('adminPersistent', 'true');
+                    }
+                    this.lastActivity = Date.now();
+                    this.startSessionTimer();
+                    this.updateAdminUI();
+                    this.closeAdminModal();
+                    this.showSuccessMessage('Successfully logged in as admin!');
+                } else {
+                    errorDiv.style.display = 'block';
+                    document.getElementById('adminPassword').value = '';
+                    document.getElementById('adminPassword').focus();
+                }
+            }
+
+            logout() {
+                sessionStorage.removeItem('adminLoggedIn');
+                localStorage.removeItem('adminPersistent');
+                this.clearTimers();
+                this.hideTimeoutWarning();
+                this.updateAdminUI();
+                this.showSuccessMessage('Successfully logged out!');
+            }
+
             handleSubmit(e) {
                 e.preventDefault();
+
+                if (!this.isAdminLoggedIn()) {
+                    alert('You must be logged in as admin to create posts.');
+                    this.closeModal();
+                    return;
+                }
 
                 const title = document.getElementById('postTitle').value.trim();
                 const content = document.getElementById('postContent').value.trim();
