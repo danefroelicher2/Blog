@@ -338,10 +338,13 @@
             right: 15px;
             display: none;
             gap: 8px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
-        .admin-mode .post-actions {
+        .admin-mode .post:hover .post-actions {
             display: flex;
+            opacity: 1;
         }
 
         .post {
@@ -352,16 +355,26 @@
             background: var(--admin-accent);
             color: white;
             border: none;
-            padding: 4px 8px;
+            padding: 6px 12px;
             border-radius: 4px;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             cursor: pointer;
             transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .post-action-btn:hover {
             background: var(--admin-accent-hover);
             transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .post-action-btn.edit {
+            background: #10b981;
+        }
+
+        .post-action-btn.edit:hover {
+            background: #059669;
         }
 
         .post-action-btn.delete {
@@ -370,6 +383,202 @@
 
         .post-action-btn.delete:hover {
             background: #dc2626;
+        }
+
+        /* Post Analytics */
+        .post-analytics {
+            display: none;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            gap: 15px;
+        }
+
+        .admin-mode .post-analytics {
+            display: flex;
+        }
+
+        .analytics-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .analytics-icon {
+            font-size: 0.7rem;
+        }
+
+        /* Admin Dashboard */
+        .admin-dashboard {
+            background: var(--bg-secondary);
+            border: 1px solid var(--admin-border);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+
+        .admin-dashboard.active {
+            display: block;
+        }
+
+        .dashboard-title {
+            color: var(--text-primary);
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-tertiary);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--admin-accent);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .dashboard-actions {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .dashboard-btn {
+            background: var(--admin-accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .dashboard-btn:hover {
+            background: var(--admin-accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .dashboard-btn.export {
+            background: #10b981;
+        }
+
+        .dashboard-btn.export:hover {
+            background: #059669;
+        }
+
+        .dashboard-btn.import {
+            background: #f59e0b;
+        }
+
+        .dashboard-btn.import:hover {
+            background: #d97706;
+        }
+
+        /* Import Section */
+        .import-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            display: none;
+        }
+
+        .import-section.active {
+            display: block;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-right: 15px;
+        }
+
+        .file-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-input-label {
+            background: var(--bg-tertiary);
+            border: 2px dashed var(--border);
+            padding: 15px 25px;
+            border-radius: 6px;
+            display: inline-block;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-secondary);
+        }
+
+        .file-input-label:hover {
+            border-color: var(--admin-accent);
+            color: var(--text-primary);
+        }
+
+        /* Confirmation Dialog */
+        .confirmation-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-secondary);
+            border: 2px solid #ef4444;
+            border-radius: 12px;
+            padding: 25px;
+            z-index: 2000;
+            min-width: 350px;
+            text-align: center;
+            box-shadow: 0 20px 40px var(--shadow);
+            display: none;
+        }
+
+        .confirmation-dialog.active {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        .confirmation-dialog h3 {
+            color: #ef4444;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .confirmation-dialog p {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .confirmation-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
         }
 
         /* Animations */
@@ -688,9 +897,48 @@
                 </div>
             </div>
             <div class="admin-toolbar-right">
+                <button id="dashboardToggle">Dashboard</button>
                 <button id="quickPostToggle">Quick Post</button>
                 <button id="postManagementToggle">Manage Posts</button>
                 <button id="adminLogoutBtn" class="btn-danger">Logout</button>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div id="adminDashboard" class="admin-dashboard">
+            <h2 class="dashboard-title">📊 Admin Dashboard</h2>
+            <div class="dashboard-stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="dashTotalPosts">0</div>
+                    <div class="stat-label">Total Posts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="dashTotalWords">0</div>
+                    <div class="stat-label">Total Words</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="dashAvgWords">0</div>
+                    <div class="stat-label">Avg Words/Post</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="dashDataSize">0KB</div>
+                    <div class="stat-label">Storage Used</div>
+                </div>
+            </div>
+            <div class="dashboard-actions">
+                <button id="exportAdvanced" class="dashboard-btn export">Export Posts</button>
+                <button id="importToggle" class="dashboard-btn import">Import Posts</button>
+                <button id="clearAllPosts" class="dashboard-btn" style="background: #ef4444;">Clear All Posts</button>
+            </div>
+            <div id="importSection" class="import-section">
+                <h3 style="color: var(--text-primary); margin-bottom: 15px;">Import Posts from Backup</h3>
+                <div class="file-input-wrapper">
+                    <input type="file" id="importFile" class="file-input" accept=".json">
+                    <label for="importFile" class="file-input-label">
+                        📁 Choose backup file (.json)
+                    </label>
+                </div>
+                <button id="processImport" class="dashboard-btn" disabled>Import Selected File</button>
             </div>
         </div>
 
@@ -776,6 +1024,36 @@
         </div>
     </div>
 
+    <div id="editPostModal" class="modal">
+        <div class="modal-content">
+            <button class="close" id="closeEditModal">&times;</button>
+            <h2>Edit Post</h2>
+            <form id="editPostForm">
+                <div class="form-group">
+                    <label for="editPostTitle">Title</label>
+                    <input type="text" id="editPostTitle" required placeholder="Enter post title...">
+                </div>
+                <div class="form-group">
+                    <label for="editPostContent">Content</label>
+                    <textarea id="editPostContent" required placeholder="Write your post content here..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="cancelEditBtn" class="btn-secondary">Cancel</button>
+                    <button type="submit">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="confirmationDialog" class="confirmation-dialog">
+        <h3 id="confirmTitle">Confirm Action</h3>
+        <p id="confirmMessage">Are you sure you want to proceed?</p>
+        <div class="confirmation-actions">
+            <button id="confirmCancel" class="btn-secondary">Cancel</button>
+            <button id="confirmProceed" class="btn-danger">Proceed</button>
+        </div>
+    </div>
+
     <script>
         class BlogApp {
             constructor() {
@@ -790,13 +1068,37 @@
                 this.adminLoginTime = null;
                 this.sessionDurationInterval = null;
                 this.postManagementMode = false;
+                this.currentEditingPost = null;
+                this.pendingConfirmAction = null;
 
                 this.initEventListeners();
+                this.migratePostData(); // Ensure all posts have required fields
                 this.renderPosts();
                 this.checkExistingSession();
                 this.initActivityTracking();
                 this.initSecurityFeatures();
                 this.setUserMode(); // Start in user mode
+            }
+
+            migratePostData() {
+                let needsSave = false;
+                this.posts.forEach(post => {
+                    if (!post.lastModified) {
+                        post.lastModified = post.timestamp || new Date().toISOString();
+                        needsSave = true;
+                    }
+                    if (!post.wordCount) {
+                        post.wordCount = this.countWords(post.content || '');
+                        needsSave = true;
+                    }
+                });
+                if (needsSave) {
+                    this.savePosts();
+                }
+            }
+
+            countWords(text) {
+                return text.trim().split(/\s+/).filter(word => word.length > 0).length;
             }
 
             hashPassword(password) {
@@ -1000,6 +1302,7 @@
                 const logoutBtn = document.getElementById('logoutBtn');
 
                 // Admin toolbar elements
+                const dashboardToggle = document.getElementById('dashboardToggle');
                 const quickPostToggle = document.getElementById('quickPostToggle');
                 const postManagementToggle = document.getElementById('postManagementToggle');
                 const adminLogoutBtn = document.getElementById('adminLogoutBtn');
@@ -1007,6 +1310,23 @@
                 // Quick post elements
                 const quickPostForm = document.getElementById('quickPostForm');
                 const quickPostCancel = document.getElementById('quickPostCancel');
+
+                // Edit modal elements
+                const editPostForm = document.getElementById('editPostForm');
+                const closeEditModal = document.getElementById('closeEditModal');
+                const cancelEditBtn = document.getElementById('cancelEditBtn');
+                const editModal = document.getElementById('editPostModal');
+
+                // Dashboard elements
+                const exportAdvanced = document.getElementById('exportAdvanced');
+                const importToggle = document.getElementById('importToggle');
+                const clearAllPosts = document.getElementById('clearAllPosts');
+                const importFile = document.getElementById('importFile');
+                const processImport = document.getElementById('processImport');
+
+                // Confirmation dialog elements
+                const confirmCancel = document.getElementById('confirmCancel');
+                const confirmProceed = document.getElementById('confirmProceed');
 
                 const extendSessionBtn = document.getElementById('extendSession');
                 const logoutNowBtn = document.getElementById('logoutNow');
@@ -1029,6 +1349,7 @@
                 logoutBtn.addEventListener('click', () => this.logout());
 
                 // Admin toolbar
+                dashboardToggle.addEventListener('click', () => this.toggleDashboard());
                 quickPostToggle.addEventListener('click', () => this.toggleQuickPost());
                 postManagementToggle.addEventListener('click', () => this.togglePostManagement());
                 adminLogoutBtn.addEventListener('click', () => this.logout());
@@ -1036,6 +1357,22 @@
                 // Quick post
                 quickPostForm.addEventListener('submit', (e) => this.handleQuickPost(e));
                 quickPostCancel.addEventListener('click', () => this.hideQuickPost());
+
+                // Edit modal
+                editPostForm.addEventListener('submit', (e) => this.handleEditPost(e));
+                closeEditModal.addEventListener('click', () => this.closeEditModal());
+                cancelEditBtn.addEventListener('click', () => this.closeEditModal());
+
+                // Dashboard
+                exportAdvanced.addEventListener('click', () => this.exportAdvanced());
+                importToggle.addEventListener('click', () => this.toggleImportSection());
+                clearAllPosts.addEventListener('click', () => this.confirmClearAllPosts());
+                importFile.addEventListener('change', (e) => this.handleFileSelect(e));
+                processImport.addEventListener('click', () => this.processImport());
+
+                // Confirmation dialog
+                confirmCancel.addEventListener('click', () => this.hideConfirmationDialog());
+                confirmProceed.addEventListener('click', () => this.executeConfirmAction());
 
                 // Session management
                 extendSessionBtn.addEventListener('click', () => this.extendSession());
@@ -1054,12 +1391,20 @@
                     }
                 });
 
+                editModal.addEventListener('click', (e) => {
+                    if (e.target === editModal) {
+                        this.closeEditModal();
+                    }
+                });
+
                 document.addEventListener('keydown', (e) => {
                     if (e.key === 'Escape') {
                         this.closeModal();
                         this.closeAdminModal();
+                        this.closeEditModal();
                         this.hideTimeoutWarning();
                         this.hideQuickPost();
+                        this.hideConfirmationDialog();
                     }
                 });
             }
@@ -1146,7 +1491,7 @@
                 e.preventDefault();
 
                 if (!this.isAdminLoggedIn()) {
-                    alert('You must be logged in as admin to create posts.');
+                    this.showErrorMessage('You must be logged in as admin to create posts.');
                     return;
                 }
 
@@ -1154,31 +1499,38 @@
                 const content = document.getElementById('quickPostContent').value.trim();
 
                 if (!title || !content) {
-                    alert('Please fill in both title and content.');
+                    this.showErrorMessage('Please fill in both title and content.');
                     return;
                 }
 
-                const post = {
-                    id: Date.now(),
-                    title,
-                    content,
-                    timestamp: new Date().toISOString(),
-                    dateString: new Date().toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })
-                };
+                try {
+                    const now = new Date().toISOString();
+                    const post = {
+                        id: Date.now(),
+                        title,
+                        content,
+                        timestamp: now,
+                        lastModified: now,
+                        wordCount: this.countWords(content),
+                        dateString: new Date().toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })
+                    };
 
-                this.posts.unshift(post);
-                this.savePosts();
-                this.renderPosts();
-                this.hideQuickPost();
-                this.updateAdminStats();
+                    this.posts.unshift(post);
+                    this.savePosts();
+                    this.renderPosts();
+                    this.hideQuickPost();
+                    this.updateAdminStats();
 
-                this.showSuccessMessage('Quick post published successfully!');
+                    this.showSuccessMessage('Quick post published successfully!');
+                } catch (error) {
+                    this.showErrorMessage('Error creating post: ' + error.message);
+                }
             }
 
             togglePostManagement() {
@@ -1240,7 +1592,7 @@
                 e.preventDefault();
 
                 if (!this.isAdminLoggedIn()) {
-                    alert('You must be logged in as admin to create posts.');
+                    this.showErrorMessage('You must be logged in as admin to create posts.');
                     this.closeModal();
                     return;
                 }
@@ -1249,39 +1601,55 @@
                 const content = document.getElementById('postContent').value.trim();
 
                 if (!title || !content) {
-                    alert('Please fill in both title and content.');
+                    this.showErrorMessage('Please fill in both title and content.');
                     return;
                 }
 
-                const post = {
-                    id: Date.now(),
-                    title,
-                    content,
-                    timestamp: new Date().toISOString(),
-                    dateString: new Date().toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })
-                };
+                try {
+                    const now = new Date().toISOString();
+                    const post = {
+                        id: Date.now(),
+                        title,
+                        content,
+                        timestamp: now,
+                        lastModified: now,
+                        wordCount: this.countWords(content),
+                        dateString: new Date().toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })
+                    };
 
-                this.posts.unshift(post);
-                this.savePosts();
-                this.renderPosts();
-                this.closeModal();
+                    this.posts.unshift(post);
+                    this.savePosts();
+                    this.renderPosts();
+                    this.closeModal();
+                    this.updateAdminStats();
 
-                this.showSuccessMessage('Post created successfully!');
+                    this.showSuccessMessage('Post created successfully!');
+                } catch (error) {
+                    this.showErrorMessage('Error creating post: ' + error.message);
+                }
             }
 
             showSuccessMessage(message) {
+                this.showToast(message, 'var(--accent)');
+            }
+
+            showErrorMessage(message) {
+                this.showToast(message, '#ef4444');
+            }
+
+            showToast(message, backgroundColor) {
                 const toast = document.createElement('div');
                 toast.style.cssText = `
                     position: fixed;
                     top: 20px;
                     right: 20px;
-                    background: var(--accent);
+                    background: ${backgroundColor};
                     color: white;
                     padding: 15px 20px;
                     border-radius: 6px;
@@ -1290,6 +1658,8 @@
                     box-shadow: 0 4px 12px var(--shadow);
                     transform: translateX(100%);
                     transition: transform 0.3s ease;
+                    max-width: 350px;
+                    word-wrap: break-word;
                 `;
                 toast.textContent = message;
                 document.body.appendChild(toast);
@@ -1301,9 +1671,11 @@
                 setTimeout(() => {
                     toast.style.transform = 'translateX(100%)';
                     setTimeout(() => {
-                        document.body.removeChild(toast);
+                        if (document.body.contains(toast)) {
+                            document.body.removeChild(toast);
+                        }
                     }, 300);
-                }, 3000);
+                }, 4000);
             }
 
             renderPosts() {
@@ -1319,21 +1691,45 @@
                     return;
                 }
 
-                container.innerHTML = this.posts.map(post => `
-                    <article class="post">
-                        ${this.isAdminLoggedIn() && this.postManagementMode ? `
-                            <div class="post-actions">
-                                <button class="post-action-btn" onclick="app.editPost(${post.id})">Edit</button>
-                                <button class="post-action-btn delete" onclick="app.deletePost(${post.id})">Delete</button>
+                container.innerHTML = this.posts.map(post => {
+                    const createdDate = new Date(post.timestamp).toLocaleDateString();
+                    const modifiedDate = new Date(post.lastModified).toLocaleDateString();
+                    const isModified = post.lastModified !== post.timestamp;
+
+                    return `
+                        <article class="post">
+                            ${this.isAdminLoggedIn() ? `
+                                <div class="post-actions">
+                                    <button class="post-action-btn edit" onclick="app.openEditModal(${post.id})">Edit</button>
+                                    <button class="post-action-btn delete" onclick="app.confirmDeletePost(${post.id})">Delete</button>
+                                </div>
+                            ` : ''}
+                            <div class="post-header">
+                                <h2 class="post-title">${this.escapeHtml(post.title)}</h2>
+                                <div class="post-meta">Posted on ${post.dateString}${isModified ? ` (edited ${modifiedDate})` : ''}</div>
                             </div>
-                        ` : ''}
-                        <div class="post-header">
-                            <h2 class="post-title">${this.escapeHtml(post.title)}</h2>
-                            <div class="post-meta">Posted on ${post.dateString}</div>
-                        </div>
-                        <div class="post-content">${this.escapeHtml(post.content)}</div>
-                    </article>
-                `).join('');
+                            <div class="post-content">${this.escapeHtml(post.content)}</div>
+                            ${this.isAdminLoggedIn() ? `
+                                <div class="post-analytics">
+                                    <div class="analytics-item">
+                                        <span class="analytics-icon">📝</span>
+                                        <span>${post.wordCount || 0} words</span>
+                                    </div>
+                                    <div class="analytics-item">
+                                        <span class="analytics-icon">📅</span>
+                                        <span>Created: ${createdDate}</span>
+                                    </div>
+                                    ${isModified ? `
+                                        <div class="analytics-item">
+                                            <span class="analytics-icon">✏️</span>
+                                            <span>Modified: ${modifiedDate}</span>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            ` : ''}
+                        </article>
+                    `;
+                }).join('');
             }
 
             escapeHtml(text) {
@@ -1342,12 +1738,134 @@
                 return div.innerHTML;
             }
 
+            // Edit Post Methods
+            openEditModal(postId) {
+                if (!this.isAdminLoggedIn()) return;
+
+                const post = this.posts.find(p => p.id === postId);
+                if (!post) {
+                    this.showErrorMessage('Post not found.');
+                    return;
+                }
+
+                this.currentEditingPost = post;
+                document.getElementById('editPostTitle').value = post.title;
+                document.getElementById('editPostContent').value = post.content;
+                document.getElementById('editPostModal').style.display = 'block';
+                document.getElementById('editPostTitle').focus();
+                document.body.style.overflow = 'hidden';
+            }
+
+            closeEditModal() {
+                document.getElementById('editPostModal').style.display = 'none';
+                document.getElementById('editPostForm').reset();
+                document.body.style.overflow = 'auto';
+                this.currentEditingPost = null;
+            }
+
+            handleEditPost(e) {
+                e.preventDefault();
+
+                if (!this.currentEditingPost) {
+                    this.showErrorMessage('No post selected for editing.');
+                    return;
+                }
+
+                const title = document.getElementById('editPostTitle').value.trim();
+                const content = document.getElementById('editPostContent').value.trim();
+
+                if (!title || !content) {
+                    this.showErrorMessage('Please fill in both title and content.');
+                    return;
+                }
+
+                try {
+                    this.currentEditingPost.title = title;
+                    this.currentEditingPost.content = content;
+                    this.currentEditingPost.lastModified = new Date().toISOString();
+                    this.currentEditingPost.wordCount = this.countWords(content);
+
+                    this.savePosts();
+                    this.renderPosts();
+                    this.closeEditModal();
+                    this.updateAdminStats();
+
+                    this.showSuccessMessage('Post updated successfully!');
+                } catch (error) {
+                    this.showErrorMessage('Error updating post: ' + error.message);
+                }
+            }
+
+            // Delete Post Methods
+            confirmDeletePost(postId) {
+                if (!this.isAdminLoggedIn()) return;
+
+                const post = this.posts.find(p => p.id === postId);
+                if (!post) {
+                    this.showErrorMessage('Post not found.');
+                    return;
+                }
+
+                this.showConfirmationDialog(
+                    'Delete Post',
+                    `Are you sure you want to delete "${post.title}"? This action cannot be undone.`,
+                    () => this.deletePost(postId)
+                );
+            }
+
+            deletePost(postId) {
+                try {
+                    const initialCount = this.posts.length;
+                    this.posts = this.posts.filter(p => p.id !== postId);
+
+                    if (this.posts.length === initialCount) {
+                        this.showErrorMessage('Post not found or already deleted.');
+                        return;
+                    }
+
+                    this.savePosts();
+                    this.renderPosts();
+                    this.updateAdminStats();
+                    this.showSuccessMessage('Post deleted successfully!');
+                } catch (error) {
+                    this.showErrorMessage('Error deleting post: ' + error.message);
+                }
+            }
+
+            // Dashboard Methods
+            toggleDashboard() {
+                const dashboard = document.getElementById('adminDashboard');
+                const isActive = dashboard.classList.contains('active');
+
+                if (isActive) {
+                    dashboard.classList.remove('active');
+                } else {
+                    this.updateDashboardStats();
+                    dashboard.classList.add('active');
+                }
+            }
+
+            updateDashboardStats() {
+                if (!this.isAdminLoggedIn()) return;
+
+                const totalPosts = this.posts.length;
+                const totalWords = this.posts.reduce((sum, post) => sum + (post.wordCount || 0), 0);
+                const avgWords = totalPosts > 0 ? Math.round(totalWords / totalPosts) : 0;
+                const dataSize = this.calculateStorageUsage();
+
+                document.getElementById('dashTotalPosts').textContent = totalPosts;
+                document.getElementById('dashTotalWords').textContent = totalWords.toLocaleString();
+                document.getElementById('dashAvgWords').textContent = avgWords;
+                document.getElementById('dashDataSize').textContent = dataSize;
+            }
+
             loadPosts() {
                 try {
                     const stored = localStorage.getItem('blogPosts');
                     return stored ? JSON.parse(stored) : [];
                 } catch (error) {
                     console.error('Error loading posts:', error);
+                    this.showErrorMessage('Error loading posts from storage.');
                     return [];
                 }
             }
@@ -1361,28 +1879,195 @@
                 }
             }
 
+            // Export/Import Methods
             exportPosts() {
                 if (this.posts.length === 0) {
-                    alert('No posts to export!');
+                    this.showErrorMessage('No posts to export!');
                     return;
                 }
 
-                const exportData = {
-                    exportDate: new Date().toISOString(),
-                    totalPosts: this.posts.length,
-                    posts: this.posts
+                try {
+                    const exportData = {
+                        exportDate: new Date().toISOString(),
+                        totalPosts: this.posts.length,
+                        version: '2.0',
+                        posts: this.posts
+                    };
+
+                    const dataStr = JSON.stringify(exportData, null, 2);
+                    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(dataBlob);
+                    link.download = `blog-posts-${new Date().toISOString().split('T')[0]}.json`;
+                    link.click();
+
+                    URL.revokeObjectURL(link.href);
+                    this.showSuccessMessage('Posts exported successfully!');
+                } catch (error) {
+                    this.showErrorMessage('Error exporting posts: ' + error.message);
+                }
+            }
+
+            exportAdvanced() {
+                if (!this.isAdminLoggedIn()) return;
+                this.exportPosts();
+            }
+
+            toggleImportSection() {
+                const section = document.getElementById('importSection');
+                const isActive = section.classList.contains('active');
+                section.classList.toggle('active', !isActive);
+            }
+
+            handleFileSelect(e) {
+                const file = e.target.files[0];
+                const processBtn = document.getElementById('processImport');
+
+                if (file && file.type === 'application/json') {
+                    processBtn.disabled = false;
+                    processBtn.textContent = `Import "${file.name}"`;
+                } else {
+                    processBtn.disabled = true;
+                    processBtn.textContent = 'Import Selected File';
+                    if (file) {
+                        this.showErrorMessage('Please select a valid JSON file.');
+                    }
+                }
+            }
+
+            processImport() {
+                const fileInput = document.getElementById('importFile');
+                const file = fileInput.files[0];
+
+                if (!file) {
+                    this.showErrorMessage('Please select a file to import.');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const importData = JSON.parse(e.target.result);
+                        this.validateAndImportPosts(importData);
+                    } catch (error) {
+                        this.showErrorMessage('Invalid JSON file: ' + error.message);
+                    }
                 };
+                reader.onerror = () => {
+                    this.showErrorMessage('Error reading file.');
+                };
+                reader.readAsText(file);
+            }
 
-                const dataStr = JSON.stringify(exportData, null, 2);
-                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            validateAndImportPosts(importData) {
+                if (!importData.posts || !Array.isArray(importData.posts)) {
+                    this.showErrorMessage('Invalid backup file format: missing posts array.');
+                    return;
+                }
 
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(dataBlob);
-                link.download = `blog-posts-${new Date().toISOString().split('T')[0]}.json`;
-                link.click();
+                const validPosts = importData.posts.filter(post => {
+                    return post.id && post.title && post.content && post.timestamp;
+                });
 
-                URL.revokeObjectURL(link.href);
-                this.showSuccessMessage('Posts exported successfully!');
+                if (validPosts.length === 0) {
+                    this.showErrorMessage('No valid posts found in backup file.');
+                    return;
+                }
+
+                const message = this.posts.length > 0
+                    ? `Import ${validPosts.length} posts? This will merge with your existing ${this.posts.length} posts.`
+                    : `Import ${validPosts.length} posts from backup?`;
+
+                this.showConfirmationDialog(
+                    'Import Posts',
+                    message,
+                    () => this.executeImport(validPosts)
+                );
+            }
+
+            executeImport(validPosts) {
+                try {
+                    // Migrate imported posts to current format
+                    const migratedPosts = validPosts.map(post => ({
+                        ...post,
+                        lastModified: post.lastModified || post.timestamp,
+                        wordCount: post.wordCount || this.countWords(post.content || ''),
+                        dateString: post.dateString || new Date(post.timestamp).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })
+                    }));
+
+                    // Merge posts (newer first)
+                    const existingIds = new Set(this.posts.map(p => p.id));
+                    const newPosts = migratedPosts.filter(p => !existingIds.has(p.id));
+
+                    this.posts = [...newPosts, ...this.posts].sort((a, b) =>
+                        new Date(b.timestamp) - new Date(a.timestamp)
+                    );
+
+                    this.savePosts();
+                    this.renderPosts();
+                    this.updateAdminStats();
+                    this.updateDashboardStats();
+
+                    // Reset import form
+                    document.getElementById('importFile').value = '';
+                    document.getElementById('processImport').disabled = true;
+                    document.getElementById('processImport').textContent = 'Import Selected File';
+                    document.getElementById('importSection').classList.remove('active');
+
+                    this.showSuccessMessage(`Successfully imported ${newPosts.length} new posts!`);
+                } catch (error) {
+                    this.showErrorMessage('Error importing posts: ' + error.message);
+                }
+            }
+
+            confirmClearAllPosts() {
+                if (!this.isAdminLoggedIn()) return;
+
+                this.showConfirmationDialog(
+                    'Clear All Posts',
+                    `Are you sure you want to delete ALL ${this.posts.length} posts? This action cannot be undone and will permanently delete all your blog content.`,
+                    () => this.clearAllPosts()
+                );
+            }
+
+            clearAllPosts() {
+                try {
+                    this.posts = [];
+                    this.savePosts();
+                    this.renderPosts();
+                    this.updateAdminStats();
+                    this.updateDashboardStats();
+                    this.showSuccessMessage('All posts have been deleted.');
+                } catch (error) {
+                    this.showErrorMessage('Error clearing posts: ' + error.message);
+                }
+            }
+
+            // Confirmation Dialog Methods
+            showConfirmationDialog(title, message, action) {
+                document.getElementById('confirmTitle').textContent = title;
+                document.getElementById('confirmMessage').textContent = message;
+                document.getElementById('confirmationDialog').classList.add('active');
+                this.pendingConfirmAction = action;
+            }
+
+            hideConfirmationDialog() {
+                document.getElementById('confirmationDialog').classList.remove('active');
+                this.pendingConfirmAction = null;
+            }
+
+            executeConfirmAction() {
+                if (this.pendingConfirmAction) {
+                    this.pendingConfirmAction();
+                    this.hideConfirmationDialog();
+                }
             }
         }
 
