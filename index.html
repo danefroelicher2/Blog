@@ -22,6 +22,21 @@
             --accent-hover: #357abd;
             --border: #404040;
             --shadow: rgba(0, 0, 0, 0.3);
+
+            /* Admin mode theme */
+            --admin-bg-primary: #1a1a2e;
+            --admin-bg-secondary: #2d2d4a;
+            --admin-accent: #7c3aed;
+            --admin-accent-hover: #6d28d9;
+            --admin-border: #4338ca;
+        }
+
+        body {
+            transition: background-color 0.5s ease;
+        }
+
+        body.admin-mode {
+            background-color: var(--admin-bg-primary);
         }
 
         body {
@@ -43,6 +58,14 @@
             padding: 40px 0;
             border-bottom: 1px solid var(--border);
             margin-bottom: 40px;
+            transition: all 0.5s ease;
+            position: relative;
+        }
+
+        body.admin-mode header {
+            background: linear-gradient(135deg, var(--admin-bg-secondary), var(--admin-bg-primary));
+            border-bottom: 1px solid var(--admin-border);
+            box-shadow: 0 2px 10px rgba(124, 58, 237, 0.1);
         }
 
         h1 {
@@ -175,6 +198,251 @@
             -moz-user-select: none;
             -ms-user-select: none;
             user-select: none;
+        }
+
+        /* Admin Toolbar */
+        .admin-toolbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(90deg, var(--admin-accent), var(--admin-accent-hover));
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1500;
+            box-shadow: 0 2px 20px rgba(124, 58, 237, 0.3);
+            transform: translateY(-100%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .admin-toolbar.active {
+            transform: translateY(0);
+        }
+
+        body.admin-mode {
+            padding-top: 70px;
+        }
+
+        .admin-toolbar-left,
+        .admin-toolbar-center,
+        .admin-toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .admin-toolbar .admin-logo {
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .admin-toolbar .admin-stats {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.85rem;
+            display: flex;
+            gap: 20px;
+        }
+
+        .admin-toolbar button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .admin-toolbar button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 60px;
+            padding: 40px 0 20px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .footer-admin-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            opacity: 0.6;
+            transition: opacity 0.3s ease;
+        }
+
+        .footer-admin-link:hover {
+            opacity: 1;
+            color: var(--accent);
+        }
+
+        /* Quick Post */
+        .quick-post {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+
+        .quick-post.active {
+            display: block;
+        }
+
+        .quick-post-title {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+
+        .quick-post-form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .quick-post-title-input,
+        .quick-post-content-input {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 10px;
+            color: var(--text-primary);
+            font-family: inherit;
+        }
+
+        .quick-post-content-input {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .quick-post-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        /* Post Actions */
+        .post-actions {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: none;
+            gap: 8px;
+        }
+
+        .admin-mode .post-actions {
+            display: flex;
+        }
+
+        .post {
+            position: relative;
+        }
+
+        .post-action-btn {
+            background: var(--admin-accent);
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .post-action-btn:hover {
+            background: var(--admin-accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .post-action-btn.delete {
+            background: #ef4444;
+        }
+
+        .post-action-btn.delete:hover {
+            background: #dc2626;
+        }
+
+        /* Animations */
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .admin-mode .header-admin-indicator {
+            animation: pulse 2s infinite;
+        }
+
+        /* Clean regular user interface */
+        .user-mode .admin-status,
+        .user-mode .admin-toolbar,
+        .user-mode .header-admin-indicator,
+        .user-mode .post-actions {
+            display: none !important;
+        }
+
+        .user-mode .controls {
+            justify-content: center;
+        }
+
+        /* Enhanced modal animations */
+        .modal {
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            animation: slideDown 0.3s ease;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .admin-toolbar {
+                flex-direction: column;
+                gap: 10px;
+                padding: 10px;
+            }
+
+            .admin-toolbar-left,
+            .admin-toolbar-center,
+            .admin-toolbar-right {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .admin-stats {
+                flex-direction: column;
+                gap: 5px !important;
+                text-align: center;
+            }
+
+            .quick-post {
+                margin: 20px 10px;
+            }
         }
 
         button {
@@ -407,9 +675,40 @@
             <button id="logoutBtn" class="btn-danger" style="padding: 4px 12px; font-size: 0.8rem;">Logout</button>
         </div>
 
+        <!-- Admin Toolbar -->
+        <div id="adminToolbar" class="admin-toolbar">
+            <div class="admin-toolbar-left">
+                <span class="admin-logo">🔒 Admin Panel</span>
+            </div>
+            <div class="admin-toolbar-center">
+                <div class="admin-stats">
+                    <span id="totalPostsCount">Posts: 0</span>
+                    <span id="storageUsage">Storage: 0KB</span>
+                    <span id="adminSince">Session: 00:00</span>
+                </div>
+            </div>
+            <div class="admin-toolbar-right">
+                <button id="quickPostToggle">Quick Post</button>
+                <button id="postManagementToggle">Manage Posts</button>
+                <button id="adminLogoutBtn" class="btn-danger">Logout</button>
+            </div>
+        </div>
+
+        <!-- Quick Post Form -->
+        <div id="quickPost" class="quick-post">
+            <h3 class="quick-post-title">Quick Post</h3>
+            <form id="quickPostForm" class="quick-post-form">
+                <input type="text" id="quickPostTitle" placeholder="Post title..." required>
+                <textarea id="quickPostContent" class="quick-post-content-input" placeholder="Write your post content..." required></textarea>
+                <div class="quick-post-actions">
+                    <button type="button" id="quickPostCancel" class="btn-secondary">Cancel</button>
+                    <button type="submit">Publish</button>
+                </div>
+            </form>
+        </div>
+
         <div class="controls">
             <button id="createPostBtn" style="display: none;">Create Post</button>
-            <button id="adminLoginBtn">Admin Login</button>
             <button id="exportBtn" class="btn-secondary">Export Posts</button>
         </div>
 
@@ -419,6 +718,10 @@
                 <p>Click "Create Post" to write your first blog post!</p>
             </div>
         </div>
+
+        <footer>
+            <a href="#" id="footerAdminLink" class="footer-admin-link">Admin</a>
+        </footer>
     </div>
 
     <div id="createPostModal" class="modal">
@@ -484,12 +787,16 @@
                 this.warningTimer = null;
                 this.countdownInterval = null;
                 this.lastActivity = Date.now();
+                this.adminLoginTime = null;
+                this.sessionDurationInterval = null;
+                this.postManagementMode = false;
 
                 this.initEventListeners();
                 this.renderPosts();
                 this.checkExistingSession();
                 this.initActivityTracking();
                 this.initSecurityFeatures();
+                this.setUserMode(); // Start in user mode
             }
 
             hashPassword(password) {
@@ -520,23 +827,75 @@
                 }
             }
 
+            setUserMode() {
+                document.body.className = 'user-mode';
+                document.getElementById('adminToolbar').classList.remove('active');
+                document.getElementById('quickPost').classList.remove('active');
+                this.postManagementMode = false;
+                this.updateAdminStats();
+            }
+
+            setAdminMode() {
+                document.body.className = 'admin-mode';
+                document.getElementById('adminToolbar').classList.add('active');
+                this.adminLoginTime = Date.now();
+                this.startSessionDurationCounter();
+                this.updateAdminStats();
+            }
+
             updateAdminUI() {
                 const createPostBtn = document.getElementById('createPostBtn');
-                const adminLoginBtn = document.getElementById('adminLoginBtn');
                 const adminStatus = document.getElementById('adminStatus');
                 const headerIndicator = document.getElementById('headerAdminIndicator');
+                const footerAdminLink = document.getElementById('footerAdminLink');
 
                 if (this.isAdminLoggedIn()) {
+                    this.setAdminMode();
                     createPostBtn.style.display = 'block';
-                    adminLoginBtn.style.display = 'none';
                     adminStatus.style.display = 'flex';
                     headerIndicator.classList.add('active');
+                    footerAdminLink.style.display = 'none';
                 } else {
+                    this.setUserMode();
                     createPostBtn.style.display = 'none';
-                    adminLoginBtn.style.display = 'block';
                     adminStatus.style.display = 'none';
                     headerIndicator.classList.remove('active');
+                    footerAdminLink.style.display = 'inline';
                 }
+            }
+
+            updateAdminStats() {
+                if (!this.isAdminLoggedIn()) return;
+
+                const totalPosts = this.posts.length;
+                const storageSize = this.calculateStorageUsage();
+
+                document.getElementById('totalPostsCount').textContent = `Posts: ${totalPosts}`;
+                document.getElementById('storageUsage').textContent = `Storage: ${storageSize}`;
+            }
+
+            calculateStorageUsage() {
+                const data = JSON.stringify(this.posts);
+                const sizeInBytes = new Blob([data]).size;
+                if (sizeInBytes < 1024) return sizeInBytes + 'B';
+                if (sizeInBytes < 1024 * 1024) return Math.round(sizeInBytes / 1024) + 'KB';
+                return Math.round(sizeInBytes / (1024 * 1024)) + 'MB';
+            }
+
+            startSessionDurationCounter() {
+                if (this.sessionDurationInterval) {
+                    clearInterval(this.sessionDurationInterval);
+                }
+
+                this.sessionDurationInterval = setInterval(() => {
+                    if (this.adminLoginTime) {
+                        const duration = Date.now() - this.adminLoginTime;
+                        const minutes = Math.floor(duration / 60000);
+                        const seconds = Math.floor((duration % 60000) / 1000);
+                        document.getElementById('adminSince').textContent =
+                            `Session: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    }
+                }, 1000);
             }
 
             initActivityTracking() {
@@ -633,31 +992,56 @@
                 const exportBtn = document.getElementById('exportBtn');
                 const modal = document.getElementById('createPostModal');
 
-                const adminLoginBtn = document.getElementById('adminLoginBtn');
+                const footerAdminLink = document.getElementById('footerAdminLink');
                 const closeAdminModal = document.getElementById('closeAdminModal');
                 const cancelAdminBtn = document.getElementById('cancelAdminBtn');
                 const adminLoginForm = document.getElementById('adminLoginForm');
                 const adminModal = document.getElementById('adminLoginModal');
                 const logoutBtn = document.getElementById('logoutBtn');
 
+                // Admin toolbar elements
+                const quickPostToggle = document.getElementById('quickPostToggle');
+                const postManagementToggle = document.getElementById('postManagementToggle');
+                const adminLogoutBtn = document.getElementById('adminLogoutBtn');
+
+                // Quick post elements
+                const quickPostForm = document.getElementById('quickPostForm');
+                const quickPostCancel = document.getElementById('quickPostCancel');
+
                 const extendSessionBtn = document.getElementById('extendSession');
                 const logoutNowBtn = document.getElementById('logoutNow');
 
+                // Main functionality
                 createPostBtn.addEventListener('click', () => this.openModal());
                 closeModal.addEventListener('click', () => this.closeModal());
                 cancelBtn.addEventListener('click', () => this.closeModal());
                 exportBtn.addEventListener('click', () => this.exportPosts());
                 postForm.addEventListener('submit', (e) => this.handleSubmit(e));
 
-                adminLoginBtn.addEventListener('click', () => this.openAdminModal());
+                // Admin login
+                footerAdminLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.openAdminModal();
+                });
                 closeAdminModal.addEventListener('click', () => this.closeAdminModal());
                 cancelAdminBtn.addEventListener('click', () => this.closeAdminModal());
                 adminLoginForm.addEventListener('submit', (e) => this.handleAdminLogin(e));
                 logoutBtn.addEventListener('click', () => this.logout());
 
+                // Admin toolbar
+                quickPostToggle.addEventListener('click', () => this.toggleQuickPost());
+                postManagementToggle.addEventListener('click', () => this.togglePostManagement());
+                adminLogoutBtn.addEventListener('click', () => this.logout());
+
+                // Quick post
+                quickPostForm.addEventListener('submit', (e) => this.handleQuickPost(e));
+                quickPostCancel.addEventListener('click', () => this.hideQuickPost());
+
+                // Session management
                 extendSessionBtn.addEventListener('click', () => this.extendSession());
                 logoutNowBtn.addEventListener('click', () => this.logout());
 
+                // Modal handling
                 modal.addEventListener('click', (e) => {
                     if (e.target === modal) {
                         this.closeModal();
@@ -675,6 +1059,7 @@
                         this.closeModal();
                         this.closeAdminModal();
                         this.hideTimeoutWarning();
+                        this.hideQuickPost();
                     }
                 });
             }
@@ -740,11 +1125,113 @@
                 }
             }
 
+            toggleQuickPost() {
+                const quickPost = document.getElementById('quickPost');
+                const isActive = quickPost.classList.contains('active');
+
+                if (isActive) {
+                    this.hideQuickPost();
+                } else {
+                    quickPost.classList.add('active');
+                    document.getElementById('quickPostTitle').focus();
+                }
+            }
+
+            hideQuickPost() {
+                document.getElementById('quickPost').classList.remove('active');
+                document.getElementById('quickPostForm').reset();
+            }
+
+            handleQuickPost(e) {
+                e.preventDefault();
+
+                if (!this.isAdminLoggedIn()) {
+                    alert('You must be logged in as admin to create posts.');
+                    return;
+                }
+
+                const title = document.getElementById('quickPostTitle').value.trim();
+                const content = document.getElementById('quickPostContent').value.trim();
+
+                if (!title || !content) {
+                    alert('Please fill in both title and content.');
+                    return;
+                }
+
+                const post = {
+                    id: Date.now(),
+                    title,
+                    content,
+                    timestamp: new Date().toISOString(),
+                    dateString: new Date().toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })
+                };
+
+                this.posts.unshift(post);
+                this.savePosts();
+                this.renderPosts();
+                this.hideQuickPost();
+                this.updateAdminStats();
+
+                this.showSuccessMessage('Quick post published successfully!');
+            }
+
+            togglePostManagement() {
+                this.postManagementMode = !this.postManagementMode;
+                const btn = document.getElementById('postManagementToggle');
+                btn.textContent = this.postManagementMode ? 'Exit Manage' : 'Manage Posts';
+                btn.style.background = this.postManagementMode ? 'rgba(239, 68, 68, 0.8)' : 'rgba(255, 255, 255, 0.2)';
+                this.renderPosts();
+            }
+
+            editPost(postId) {
+                const post = this.posts.find(p => p.id === postId);
+                if (!post) return;
+
+                const newTitle = prompt('Edit title:', post.title);
+                if (newTitle === null) return;
+
+                const newContent = prompt('Edit content:', post.content);
+                if (newContent === null) return;
+
+                if (newTitle.trim() && newContent.trim()) {
+                    post.title = newTitle.trim();
+                    post.content = newContent.trim();
+                    this.savePosts();
+                    this.renderPosts();
+                    this.updateAdminStats();
+                    this.showSuccessMessage('Post updated successfully!');
+                }
+            }
+
+            deletePost(postId) {
+                if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+                    return;
+                }
+
+                this.posts = this.posts.filter(p => p.id !== postId);
+                this.savePosts();
+                this.renderPosts();
+                this.updateAdminStats();
+                this.showSuccessMessage('Post deleted successfully!');
+            }
+
             logout() {
                 sessionStorage.removeItem('adminLoggedIn');
                 localStorage.removeItem('adminPersistent');
                 this.clearTimers();
                 this.hideTimeoutWarning();
+                this.hideQuickPost();
+                if (this.sessionDurationInterval) {
+                    clearInterval(this.sessionDurationInterval);
+                }
+                this.adminLoginTime = null;
+                this.postManagementMode = false;
                 this.updateAdminUI();
                 this.showSuccessMessage('Successfully logged out!');
             }
@@ -834,6 +1321,12 @@
 
                 container.innerHTML = this.posts.map(post => `
                     <article class="post">
+                        ${this.isAdminLoggedIn() && this.postManagementMode ? `
+                            <div class="post-actions">
+                                <button class="post-action-btn" onclick="app.editPost(${post.id})">Edit</button>
+                                <button class="post-action-btn delete" onclick="app.deletePost(${post.id})">Delete</button>
+                            </div>
+                        ` : ''}
                         <div class="post-header">
                             <h2 class="post-title">${this.escapeHtml(post.title)}</h2>
                             <div class="post-meta">Posted on ${post.dateString}</div>
@@ -893,8 +1386,9 @@
             }
         }
 
+        let app;
         document.addEventListener('DOMContentLoaded', () => {
-            new BlogApp();
+            app = new BlogApp();
         });
     </script>
 </body>
