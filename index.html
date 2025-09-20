@@ -581,6 +581,115 @@
             justify-content: center;
         }
 
+        /* Security Features */
+        .rate-limit-warning {
+            background: #dc2626;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            text-align: center;
+            display: none;
+        }
+
+        .rate-limit-warning.active {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        .security-indicator {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: var(--admin-accent);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            z-index: 1000;
+            display: none;
+        }
+
+        .security-indicator.active {
+            display: block;
+        }
+
+        .activity-log {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .activity-log h4 {
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            font-size: 1rem;
+        }
+
+        .log-entry {
+            background: var(--bg-tertiary);
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .log-action {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .log-time {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+
+        .log-ip {
+            color: var(--admin-accent);
+            font-family: monospace;
+            font-size: 0.75rem;
+        }
+
+        .security-status {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .security-stat {
+            background: var(--bg-tertiary);
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .security-stat.warning {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .security-stat.danger {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .security-stat-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--admin-accent);
+            margin-bottom: 4px;
+        }
+
+        .security-stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
         /* Animations */
         @keyframes slideDown {
             from {
@@ -871,6 +980,8 @@
     </style>
 </head>
 <body>
+    <div id="securityIndicator" class="security-indicator">🛡️ Secured</div>
+
     <div class="container">
         <header>
             <div id="headerAdminIndicator" class="header-admin-indicator">🔒 Admin Mode</div>
@@ -929,6 +1040,38 @@
                 <button id="exportAdvanced" class="dashboard-btn export">Export Posts</button>
                 <button id="importToggle" class="dashboard-btn import">Import Posts</button>
                 <button id="clearAllPosts" class="dashboard-btn" style="background: #ef4444;">Clear All Posts</button>
+                <button id="securityToggle" class="dashboard-btn" style="background: #7c3aed;">Security Center</button>
+            </div>
+
+            <!-- Security Dashboard -->
+            <div id="securityDashboard" class="activity-log" style="display: none;">
+                <h4>🛡️ Security Center</h4>
+                <div class="security-status">
+                    <div class="security-stat">
+                        <div class="security-stat-value" id="secLoginAttempts">0</div>
+                        <div class="security-stat-label">Login Attempts</div>
+                    </div>
+                    <div class="security-stat">
+                        <div class="security-stat-value" id="secSessionsToday">0</div>
+                        <div class="security-stat-label">Sessions Today</div>
+                    </div>
+                    <div class="security-stat">
+                        <div class="security-stat-value" id="secCurrentIP">Loading...</div>
+                        <div class="security-stat-label">Current IP</div>
+                    </div>
+                    <div class="security-stat">
+                        <div class="security-stat-value" id="secSecurityLevel">High</div>
+                        <div class="security-stat-label">Security Level</div>
+                    </div>
+                </div>
+                <h4>Recent Admin Activity</h4>
+                <div id="activityLogContainer">
+                    <div class="log-entry">
+                        <span class="log-action">No activity recorded yet</span>
+                        <span class="log-time">-</span>
+                    </div>
+                </div>
+                <button id="clearLogs" class="dashboard-btn" style="background: #ef4444; margin-top: 15px;">Clear Activity Logs</button>
             </div>
             <div id="importSection" class="import-section">
                 <h3 style="color: var(--text-primary); margin-bottom: 15px;">Import Posts from Backup</h3>
@@ -1002,6 +1145,9 @@
                     <label for="adminPassword">Password</label>
                     <input type="password" id="adminPassword" required placeholder="Enter admin password...">
                     <div id="loginError" class="error-message">Incorrect password. Please try again.</div>
+                    <div id="rateLimitWarning" class="rate-limit-warning">
+                        Too many failed attempts. Please wait <span id="lockoutTimer">15:00</span> before trying again.
+                    </div>
                 </div>
                 <div class="stay-logged-in">
                     <input type="checkbox" id="stayLoggedIn">
@@ -1058,7 +1204,23 @@
         class BlogApp {
             constructor() {
                 this.posts = this.loadPosts();
-                this.adminPassword = this.hashPassword('myblog2024admin');
+
+                // Security Configuration
+                this.securityConfig = {
+                    enableIPRestriction: false, // Set to true to enable IP whitelist
+                    allowedIPs: ['127.0.0.1', 'localhost'], // Add your IPs here
+                    maxLoginAttempts: 3,
+                    lockoutDuration: 15 * 60 * 1000, // 15 minutes
+                    sessionTokens: new Set(),
+                    enableActivityLogging: true
+                };
+
+                // Obfuscated password and fake security layers
+                this.adminPassword = this.createSecureHash('myblog2024admin');
+                this.fakePassword1 = this.createSecureHash('admin123'); // Dummy
+                this.fakePassword2 = this.createSecureHash('password'); // Dummy
+                this.securitySalt = this.generateSecuritySalt();
+
                 this.sessionTimeout = 2 * 60 * 60 * 1000; // 2 hours
                 this.warningTime = 5 * 60 * 1000; // 5 minutes
                 this.sessionTimer = null;
@@ -1070,14 +1232,98 @@
                 this.postManagementMode = false;
                 this.currentEditingPost = null;
                 this.pendingConfirmAction = null;
+                this.currentIP = null;
+                this.sessionToken = null;
+                this.lockoutTimer = null;
 
+                this.initSecuritySystems();
                 this.initEventListeners();
-                this.migratePostData(); // Ensure all posts have required fields
+                this.migratePostData();
                 this.renderPosts();
                 this.checkExistingSession();
                 this.initActivityTracking();
                 this.initSecurityFeatures();
-                this.setUserMode(); // Start in user mode
+                this.setUserMode();
+            }
+
+            // Enhanced Security Methods
+            initSecuritySystems() {
+                this.detectCurrentIP();
+                this.checkIPRestrictions();
+                this.initRateLimiting();
+                this.loadActivityLogs();
+                this.fakeSecurityCheck1(); // Dummy security check
+                this.generateSessionFingerprint();
+            }
+
+            detectCurrentIP() {
+                // Multiple IP detection methods for redundancy
+                fetch('https://api.ipify.org?format=json')
+                    .then(response => response.json())
+                    .then(data => {
+                        this.currentIP = data.ip;
+                        this.updateSecurityIndicator();
+                        document.getElementById('secCurrentIP').textContent = data.ip;
+                    })
+                    .catch(() => {
+                        // Fallback IP detection
+                        this.currentIP = 'Unknown';
+                        document.getElementById('secCurrentIP').textContent = 'Unknown';
+                    });
+            }
+
+            checkIPRestrictions() {
+                if (!this.securityConfig.enableIPRestriction) return true;
+
+                if (this.currentIP && !this.securityConfig.allowedIPs.includes(this.currentIP)) {
+                    this.logSecurityEvent('IP_RESTRICTED', `Blocked IP: ${this.currentIP}`);
+                    document.getElementById('footerAdminLink').style.display = 'none';
+                    return false;
+                }
+                return true;
+            }
+
+            createSecureHash(input) {
+                // Multi-layer obfuscation
+                const layer1 = btoa(input.split('').reverse().join(''));
+                const layer2 = this.customHash(layer1 + this.securitySalt);
+                const layer3 = btoa(layer2).replace(/[+=]/g, '');
+                return layer3;
+            }
+
+            customHash(str) {
+                let hash = 0;
+                const multiplier = 31;
+                for (let i = 0; i < str.length; i++) {
+                    hash = ((hash * multiplier) + str.charCodeAt(i)) & 0x7fffffff;
+                }
+                return hash.toString(36);
+            }
+
+            generateSecuritySalt() {
+                return btoa('securesalt' + Date.now().toString(36)).slice(0, 16);
+            }
+
+            generateSessionFingerprint() {
+                const fingerprint = btoa(
+                    navigator.userAgent +
+                    screen.width + screen.height +
+                    navigator.language +
+                    Date.now()
+                ).slice(0, 32);
+                return fingerprint;
+            }
+
+            fakeSecurityCheck1() {
+                // Dummy security check to confuse inspection
+                const fakeToken = btoa('fake_security_token_' + Math.random());
+                localStorage.setItem('system_token', fakeToken);
+                return true;
+            }
+
+            fakeSecurityCheck2() {
+                // Another dummy check
+                return localStorage.getItem('system_token') !== null;
             }
 
             migratePostData() {
@@ -1099,6 +1345,115 @@
 
             countWords(text) {
                 return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+            }
+
+            // Rate Limiting System
+            initRateLimiting() {
+                const attempts = localStorage.getItem('adminLoginAttempts');
+                const lockoutEnd = localStorage.getItem('adminLockoutEnd');
+
+                if (lockoutEnd && Date.now() < parseInt(lockoutEnd)) {
+                    this.startLockoutTimer(parseInt(lockoutEnd));
+                } else {
+                    localStorage.removeItem('adminLockoutEnd');
+                    localStorage.setItem('adminLoginAttempts', '0');
+                }
+            }
+
+            recordLoginAttempt(success = false) {
+                const attempts = parseInt(localStorage.getItem('adminLoginAttempts') || '0');
+                const newAttempts = success ? 0 : attempts + 1;
+
+                localStorage.setItem('adminLoginAttempts', newAttempts.toString());
+                document.getElementById('secLoginAttempts').textContent = newAttempts;
+
+                if (!success) {
+                    this.logSecurityEvent('LOGIN_FAILED', `Failed attempt ${newAttempts}/3`);
+
+                    if (newAttempts >= this.securityConfig.maxLoginAttempts) {
+                        const lockoutEnd = Date.now() + this.securityConfig.lockoutDuration;
+                        localStorage.setItem('adminLockoutEnd', lockoutEnd.toString());
+                        this.startLockoutTimer(lockoutEnd);
+                        this.logSecurityEvent('ACCOUNT_LOCKED', `Locked for 15 minutes`);
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            startLockoutTimer(lockoutEnd) {
+                const warningDiv = document.getElementById('rateLimitWarning');
+                const timerSpan = document.getElementById('lockoutTimer');
+                const loginForm = document.getElementById('adminLoginForm');
+
+                warningDiv.classList.add('active');
+                loginForm.style.pointerEvents = 'none';
+                loginForm.style.opacity = '0.5';
+
+                this.lockoutTimer = setInterval(() => {
+                    const remaining = lockoutEnd - Date.now();
+
+                    if (remaining <= 0) {
+                        clearInterval(this.lockoutTimer);
+                        warningDiv.classList.remove('active');
+                        loginForm.style.pointerEvents = 'auto';
+                        loginForm.style.opacity = '1';
+                        localStorage.removeItem('adminLockoutEnd');
+                        localStorage.setItem('adminLoginAttempts', '0');
+                        this.logSecurityEvent('LOCKOUT_EXPIRED', 'Account unlocked');
+                        return;
+                    }
+
+                    const minutes = Math.floor(remaining / 60000);
+                    const seconds = Math.floor((remaining % 60000) / 1000);
+                    timerSpan.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                }, 1000);
+            }
+
+            isRateLimited() {
+                const lockoutEnd = localStorage.getItem('adminLockoutEnd');
+                return lockoutEnd && Date.now() < parseInt(lockoutEnd);
+            }
+
+            // Session Security System
+            generateSessionToken() {
+                const token = btoa(
+                    Date.now() +
+                    Math.random() +
+                    this.currentIP +
+                    navigator.userAgent
+                ).replace(/[+=]/g, '');
+
+                this.sessionToken = token;
+                this.securityConfig.sessionTokens.add(token);
+                sessionStorage.setItem('adminSessionToken', token);
+                return token;
+            }
+
+            validateSessionToken() {
+                const token = sessionStorage.getItem('adminSessionToken');
+                if (!token || !this.securityConfig.sessionTokens.has(token)) {
+                    this.triggerSecurityViolation('INVALID_SESSION_TOKEN');
+                    return false;
+                }
+                return true;
+            }
+
+            triggerSecurityViolation(reason) {
+                this.logSecurityEvent('SECURITY_VIOLATION', reason);
+                this.emergencyLogout();
+                this.showErrorMessage('Security violation detected. Session terminated.');
+            }
+
+            emergencyLogout() {
+                // Clear all admin data
+                sessionStorage.clear();
+                localStorage.removeItem('adminPersistent');
+                this.securityConfig.sessionTokens.clear();
+                this.sessionToken = null;
+                this.currentEditingPost = null;
+                this.clearTimers();
+                this.updateAdminUI();
             }
 
             hashPassword(password) {
@@ -1324,6 +1679,10 @@
                 const importFile = document.getElementById('importFile');
                 const processImport = document.getElementById('processImport');
 
+                // Security elements
+                const securityToggle = document.getElementById('securityToggle');
+                const clearLogs = document.getElementById('clearLogs');
+
                 // Confirmation dialog elements
                 const confirmCancel = document.getElementById('confirmCancel');
                 const confirmProceed = document.getElementById('confirmProceed');
@@ -1369,6 +1728,10 @@
                 clearAllPosts.addEventListener('click', () => this.confirmClearAllPosts());
                 importFile.addEventListener('change', (e) => this.handleFileSelect(e));
                 processImport.addEventListener('click', () => this.processImport());
+
+                // Security
+                securityToggle.addEventListener('click', () => this.toggleSecurityDashboard());
+                clearLogs.addEventListener('click', () => this.confirmClearLogs());
 
                 // Confirmation dialog
                 confirmCancel.addEventListener('click', () => this.hideConfirmationDialog());
@@ -1448,25 +1811,169 @@
 
             handleAdminLogin(e) {
                 e.preventDefault();
+
+                if (this.isRateLimited()) {
+                    this.showErrorMessage('Account is locked due to too many failed attempts.');
+                    return;
+                }
+
                 const password = document.getElementById('adminPassword').value;
                 const stayLoggedIn = document.getElementById('stayLoggedIn').checked;
                 const errorDiv = document.getElementById('loginError');
 
-                const hashedInput = this.hashPassword(password);
+                // Fake security checks first
+                if (!this.fakeSecurityCheck2()) {
+                    this.triggerSecurityViolation('FAKE_CHECK_FAILED');
+                    return;
+                }
+
+                const hashedInput = this.createSecureHash(password);
                 if (hashedInput === this.adminPassword) {
+                    if (!this.recordLoginAttempt(true)) return;
+
+                    // Generate session token for this session
+                    this.generateSessionToken();
+
                     sessionStorage.setItem('adminLoggedIn', 'true');
                     if (stayLoggedIn) {
                         localStorage.setItem('adminPersistent', 'true');
                     }
+
                     this.lastActivity = Date.now();
                     this.startSessionTimer();
                     this.updateAdminUI();
                     this.closeAdminModal();
+
+                    // Log successful login
+                    this.logSecurityEvent('LOGIN_SUCCESS', 'Admin login successful');
+                    this.updateSecurityStats();
+
                     this.showSuccessMessage('Successfully logged in as admin!');
                 } else {
+                    if (!this.recordLoginAttempt(false)) return;
+
                     errorDiv.style.display = 'block';
                     document.getElementById('adminPassword').value = '';
                     document.getElementById('adminPassword').focus();
+                }
+            }
+
+            // Activity Logging System
+            logSecurityEvent(action, details = '') {
+                if (!this.securityConfig.enableActivityLogging) return;
+
+                const logs = this.getActivityLogs();
+                const logEntry = {
+                    timestamp: new Date().toISOString(),
+                    action: action,
+                    details: details,
+                    ip: this.currentIP || 'Unknown',
+                    userAgent: navigator.userAgent.substring(0, 50) + '...'
+                };
+
+                logs.unshift(logEntry);
+
+                // Keep only last 50 entries
+                if (logs.length > 50) {
+                    logs.splice(50);
+                }
+
+                localStorage.setItem('adminActivityLogs', JSON.stringify(logs));
+                this.updateActivityLogDisplay();
+            }
+
+            getActivityLogs() {
+                try {
+                    const logs = localStorage.getItem('adminActivityLogs');
+                    return logs ? JSON.parse(logs) : [];
+                } catch (error) {
+                    return [];
+                }
+            }
+
+            loadActivityLogs() {
+                this.updateActivityLogDisplay();
+                this.updateSecurityStats();
+            }
+
+            updateActivityLogDisplay() {
+                const container = document.getElementById('activityLogContainer');
+                const logs = this.getActivityLogs();
+
+                if (logs.length === 0) {
+                    container.innerHTML = `
+                        <div class="log-entry">
+                            <span class="log-action">No activity recorded yet</span>
+                            <span class="log-time">-</span>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = logs.slice(0, 10).map(log => {
+                    const time = new Date(log.timestamp).toLocaleString();
+                    return `
+                        <div class="log-entry">
+                            <div>
+                                <span class="log-action">${this.formatLogAction(log.action)}</span>
+                                ${log.details ? `<br><small>${log.details}</small>` : ''}
+                            </div>
+                            <div>
+                                <div class="log-time">${time}</div>
+                                <div class="log-ip">${log.ip}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            formatLogAction(action) {
+                const actionMap = {
+                    'LOGIN_SUCCESS': '✅ Login Successful',
+                    'LOGIN_FAILED': '❌ Login Failed',
+                    'ACCOUNT_LOCKED': '🔒 Account Locked',
+                    'LOCKOUT_EXPIRED': '🔓 Account Unlocked',
+                    'POST_CREATED': '📝 Post Created',
+                    'POST_EDITED': '✏️ Post Edited',
+                    'POST_DELETED': '🗑️ Post Deleted',
+                    'POSTS_EXPORTED': '📤 Posts Exported',
+                    'POSTS_IMPORTED': '📥 Posts Imported',
+                    'ADMIN_LOGOUT': '👋 Admin Logout',
+                    'SECURITY_VIOLATION': '⚠️ Security Violation',
+                    'IP_RESTRICTED': '🚫 IP Restricted'
+                };
+                return actionMap[action] || action;
+            }
+
+            updateSecurityStats() {
+                const logs = this.getActivityLogs();
+                const today = new Date().toDateString();
+
+                const todayLogs = logs.filter(log =>
+                    new Date(log.timestamp).toDateString() === today
+                );
+
+                const sessionCount = todayLogs.filter(log =>
+                    log.action === 'LOGIN_SUCCESS'
+                ).length;
+
+                document.getElementById('secSessionsToday').textContent = sessionCount;
+
+                const attempts = parseInt(localStorage.getItem('adminLoginAttempts') || '0');
+                document.getElementById('secLoginAttempts').textContent = attempts;
+
+                // Security level calculation
+                let securityLevel = 'High';
+                if (attempts > 1) securityLevel = 'Medium';
+                if (attempts >= 3) securityLevel = 'Low';
+
+                document.getElementById('secSecurityLevel').textContent = securityLevel;
+            }
+
+            updateSecurityIndicator() {
+                const indicator = document.getElementById('securityIndicator');
+                if (this.securityConfig.enableIPRestriction && this.currentIP) {
+                    indicator.classList.add('active');
                 }
             }
 
@@ -1490,7 +1997,7 @@
             handleQuickPost(e) {
                 e.preventDefault();
 
-                if (!this.isAdminLoggedIn()) {
+                if (!this.isAdminLoggedIn() || !this.validateSessionToken()) {
                     this.showErrorMessage('You must be logged in as admin to create posts.');
                     return;
                 }
@@ -1527,6 +2034,7 @@
                     this.hideQuickPost();
                     this.updateAdminStats();
 
+                    this.logSecurityEvent('POST_CREATED', `Quick post: "${title}"`);
                     this.showSuccessMessage('Quick post published successfully!');
                 } catch (error) {
                     this.showErrorMessage('Error creating post: ' + error.message);
@@ -1790,6 +2298,7 @@
                     this.closeEditModal();
                     this.updateAdminStats();
 
+                    this.logSecurityEvent('POST_EDITED', `Edited: "${title}"`);
                     this.showSuccessMessage('Post updated successfully!');
                 } catch (error) {
                     this.showErrorMessage('Error updating post: ' + error.message);
@@ -2068,6 +2577,70 @@
                     this.pendingConfirmAction();
                     this.hideConfirmationDialog();
                 }
+            }
+
+            // Security Dashboard Methods
+            toggleSecurityDashboard() {
+                if (!this.validateSessionToken()) return;
+
+                const dashboard = document.getElementById('securityDashboard');
+                const isActive = dashboard.style.display !== 'none';
+
+                if (isActive) {
+                    dashboard.style.display = 'none';
+                } else {
+                    this.updateSecurityStats();
+                    this.updateActivityLogDisplay();
+                    dashboard.style.display = 'block';
+                }
+            }
+
+            confirmClearLogs() {
+                if (!this.validateSessionToken()) return;
+
+                this.showConfirmationDialog(
+                    'Clear Activity Logs',
+                    'Are you sure you want to clear all admin activity logs? This action cannot be undone.',
+                    () => this.clearActivityLogs()
+                );
+            }
+
+            clearActivityLogs() {
+                try {
+                    localStorage.removeItem('adminActivityLogs');
+                    this.updateActivityLogDisplay();
+                    this.logSecurityEvent('LOGS_CLEARED', 'Admin activity logs cleared');
+                    this.showSuccessMessage('Activity logs cleared successfully!');
+                } catch (error) {
+                    this.showErrorMessage('Error clearing logs: ' + error.message);
+                }
+            }
+
+            // Enhanced logout with security logging
+            logout() {
+                this.logSecurityEvent('ADMIN_LOGOUT', 'Admin session ended');
+
+                sessionStorage.removeItem('adminLoggedIn');
+                localStorage.removeItem('adminPersistent');
+                this.clearTimers();
+                this.hideTimeoutWarning();
+                this.hideQuickPost();
+                if (this.sessionDurationInterval) {
+                    clearInterval(this.sessionDurationInterval);
+                }
+                if (this.lockoutTimer) {
+                    clearInterval(this.lockoutTimer);
+                }
+
+                // Clear session security
+                this.securityConfig.sessionTokens.clear();
+                sessionStorage.removeItem('adminSessionToken');
+
+                this.adminLoginTime = null;
+                this.postManagementMode = false;
+                this.sessionToken = null;
+                this.updateAdminUI();
+                this.showSuccessMessage('Successfully logged out!');
             }
         }
 
