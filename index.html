@@ -956,7 +956,8 @@
         }
 
         .century-content.expanded {
-            max-height: 200px; /* Will be adjusted by JavaScript */
+            max-height: 200px;
+            /* Will be adjusted by JavaScript */
         }
 
         .century-inner {
@@ -1656,7 +1657,7 @@
             }
 
             generateSecuritySalt() {
-                return btoa('securesalt' + Date.now().toString(36)).slice(0, 16);
+                return btoa('securesalt').slice(0, 16); // Fixed salt instead of dynamic
             }
 
             generateSessionFingerprint() {
