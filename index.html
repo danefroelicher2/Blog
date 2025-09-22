@@ -500,6 +500,58 @@
             background: #d97706;
         }
 
+        /* Century Stats Section */
+        .century-stats-section {
+            margin: 25px 0;
+            padding: 20px 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .century-stats-title {
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .century-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+        }
+
+        .century-stat-item {
+            background: var(--bg-tertiary);
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .century-stat-item:hover {
+            border-color: var(--admin-accent);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .century-stat-value {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--admin-accent);
+            margin-bottom: 4px;
+        }
+
+        .century-stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .century-stat-empty {
+            opacity: 0.6;
+        }
+
         /* Import Section */
         .import-section {
             margin-top: 20px;
@@ -951,12 +1003,12 @@
         .century-content {
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease-out;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             background: var(--bg-tertiary);
         }
 
         .century-content.expanded {
-            max-height: 200px;
+            max-height: 500px;
             /* Will be adjusted by JavaScript */
         }
 
@@ -972,6 +1024,66 @@
             padding: 15px 0;
         }
 
+        .century-posts {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .timeline-post-item {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .timeline-post-item:hover {
+            background: var(--bg-secondary);
+            border-color: var(--accent);
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .timeline-post-title {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 500;
+            line-height: 1.4;
+            margin: 0;
+            display: block;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+
+        .timeline-post-title:hover {
+            color: var(--accent);
+        }
+
+        .timeline-post-meta {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .timeline-post-date {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .timeline-post-words {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
         /* Admin mode timeline styling */
         body.admin-mode .century-section:hover {
             border-color: var(--admin-accent);
@@ -980,6 +1092,60 @@
         body.admin-mode .timeline-header {
             background: var(--admin-bg-secondary);
             border-color: var(--admin-border);
+        }
+
+        body.admin-mode .timeline-post-item:hover {
+            border-color: var(--admin-accent);
+        }
+
+        body.admin-mode .timeline-post-title:hover {
+            color: var(--admin-accent);
+        }
+
+        .timeline-post-actions {
+            display: none;
+            margin-top: 8px;
+            gap: 8px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        body.admin-mode .timeline-post-item:hover .timeline-post-actions {
+            display: flex;
+            opacity: 1;
+        }
+
+        .timeline-action-btn {
+            background: var(--admin-accent);
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .timeline-action-btn:hover {
+            background: var(--admin-accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .timeline-action-btn.edit {
+            background: #10b981;
+        }
+
+        .timeline-action-btn.edit:hover {
+            background: #059669;
+        }
+
+        .timeline-action-btn.delete {
+            background: #ef4444;
+        }
+
+        .timeline-action-btn.delete:hover {
+            background: #dc2626;
         }
 
         /* Responsive adjustments */
@@ -1066,6 +1232,49 @@
             .century-empty {
                 font-size: 0.9rem;
                 padding: 12px 0;
+            }
+
+            .timeline-post-item {
+                padding: 10px 12px;
+            }
+
+            .timeline-post-title {
+                font-size: 0.95rem;
+            }
+
+            .timeline-post-meta {
+                font-size: 0.8rem;
+                gap: 8px;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .timeline-action-btn {
+                padding: 6px 10px;
+                font-size: 0.8rem;
+            }
+
+            body.admin-mode .timeline-post-actions {
+                display: flex !important;
+                opacity: 1 !important;
+            }
+
+            /* Century stats mobile responsiveness */
+            .century-stats-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 8px;
+            }
+
+            .century-stat-item {
+                padding: 8px;
+            }
+
+            .century-stat-value {
+                font-size: 1.1rem;
+            }
+
+            .century-stat-label {
+                font-size: 0.75rem;
             }
         }
 
@@ -1248,6 +1457,68 @@
             background: var(--bg-tertiary);
         }
 
+        /* Post View Modal Styles */
+        .post-view-modal-content {
+            max-width: 800px;
+            max-height: 90vh;
+        }
+
+        .post-view-container {
+            padding: 0;
+        }
+
+        .post-view-header {
+            padding: 20px 30px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 0;
+        }
+
+        .post-view-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+            line-height: 1.3;
+        }
+
+        .post-view-meta {
+            color: var(--text-muted);
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .post-view-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .post-view-content {
+            padding: 30px;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .post-view-century {
+            background: var(--accent);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        /* Admin mode post view styling */
+        body.admin-mode .post-view-century {
+            background: var(--admin-accent);
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 15px;
@@ -1285,6 +1556,40 @@
 
             button {
                 width: 100%;
+            }
+
+            /* Post view modal mobile responsiveness */
+            .post-view-modal-content {
+                max-width: 95%;
+                max-height: 95vh;
+                margin: 10px;
+            }
+
+            .post-view-header {
+                padding: 15px 20px;
+            }
+
+            .post-view-title {
+                font-size: 1.4rem;
+                margin-bottom: 10px;
+            }
+
+            .post-view-meta {
+                font-size: 0.9rem;
+                gap: 15px;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .post-view-content {
+                padding: 20px;
+                font-size: 1rem;
+                line-height: 1.6;
+            }
+
+            .post-view-century {
+                font-size: 0.8rem;
+                padding: 3px 10px;
             }
         }
     </style>
@@ -1353,6 +1658,13 @@
                 <div class="stat-card">
                     <div class="stat-value" id="dashDataSize">0KB</div>
                     <div class="stat-label">Storage Used</div>
+                </div>
+            </div>
+
+            <div class="century-stats-section">
+                <h3 class="century-stats-title">Posts by Century</h3>
+                <div id="centuryStats" class="century-stats-grid">
+                    <!-- Century stats will be populated by JavaScript -->
                 </div>
             </div>
             <div class="dashboard-actions">
@@ -1551,6 +1863,19 @@
         <div class="confirmation-actions">
             <button id="confirmCancel" class="btn-secondary">Cancel</button>
             <button id="confirmProceed" class="btn-danger">Proceed</button>
+        </div>
+    </div>
+
+    <div id="postViewModal" class="modal">
+        <div class="modal-content post-view-modal-content">
+            <button class="close" id="closePostViewModal">&times;</button>
+            <div class="post-view-container">
+                <div class="post-view-header">
+                    <h2 id="postViewTitle" class="post-view-title"></h2>
+                    <div id="postViewMeta" class="post-view-meta"></div>
+                </div>
+                <div id="postViewContent" class="post-view-content"></div>
+            </div>
         </div>
     </div>
 
@@ -1759,64 +2084,212 @@
             }
 
             populateTimelineTab() {
-                const timelineAccordion = document.getElementById('timelineAccordion');
-                if (!timelineAccordion) return;
+                try {
+                    const timelineAccordion = document.getElementById('timelineAccordion');
+                    if (!timelineAccordion) {
+                        console.warn('Timeline accordion element not found');
+                        return;
+                    }
 
-                const centuries = this.generateCenturyOptions();
+                    const centuries = this.generateCenturyOptions();
 
-                timelineAccordion.innerHTML = centuries.map(century => `
-                    <div class="century-section" data-century="${century.value}">
-                        <div class="century-header" onclick="app.toggleCenturySection('${century.value}')">
-                            <h4 class="century-title">${century.display}</h4>
-                            <span class="century-arrow">▼</span>
-                        </div>
-                        <div class="century-content">
-                            <div class="century-inner">
-                                <div class="century-empty">No articles yet</div>
+                    timelineAccordion.innerHTML = centuries.map(century => {
+                        const centuryPosts = this.getPostsByCentury(century.value);
+                        const hasPosts = centuryPosts.length > 0;
+
+                        return `
+                            <div class="century-section" data-century="${century.value}">
+                                <div class="century-header" onclick="app.toggleCenturySection('${century.value}')">
+                                    <h4 class="century-title">${century.display} ${hasPosts ? `(${centuryPosts.length})` : ''}</h4>
+                                    <span class="century-arrow">▼</span>
+                                </div>
+                                <div class="century-content">
+                                    <div class="century-inner">
+                                        ${hasPosts ? this.renderTimelinePosts(centuryPosts) : '<div class="century-empty">No articles yet</div>'}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        `;
+                    }).join('');
+                } catch (error) {
+                    console.error('Error populating timeline tab:', error);
+                }
+            }
+
+            getPostsByCentury(centuryValue) {
+                return this.posts
+                    .filter(post => post.century === centuryValue)
+                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            }
+
+            renderTimelinePosts(posts) {
+                return `
+                    <div class="century-posts">
+                        ${posts.map(post => `
+                            <div class="timeline-post-item">
+                                <div class="timeline-post-title" onclick="app.viewTimelinePost(${post.id})">${this.escapeHtml(post.title)}</div>
+                                <div class="timeline-post-meta">
+                                    <div class="timeline-post-date">
+                                        <span>📅</span>
+                                        <span>${new Date(post.timestamp).toLocaleDateString()}</span>
+                                    </div>
+                                    <div class="timeline-post-words">
+                                        <span>📝</span>
+                                        <span>${post.wordCount || 0} words</span>
+                                    </div>
+                                </div>
+                                ${this.isAdminLoggedIn() ? `
+                                    <div class="timeline-post-actions">
+                                        <button class="timeline-action-btn edit" onclick="event.stopPropagation(); app.openEditModal(${post.id})">Edit</button>
+                                        <button class="timeline-action-btn delete" onclick="event.stopPropagation(); app.confirmDeletePost(${post.id})">Delete</button>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `).join('')}
                     </div>
-                `).join('');
+                `;
             }
 
             toggleCenturySection(centuryValue) {
-                const section = document.querySelector(`[data-century="${centuryValue}"]`);
-                if (!section) return;
+                try {
+                    const section = document.querySelector(`[data-century="${centuryValue}"]`);
+                    if (!section) return;
 
-                const header = section.querySelector('.century-header');
-                const content = section.querySelector('.century-content');
-                const isExpanded = header.classList.contains('active');
+                    const header = section.querySelector('.century-header');
+                    const content = section.querySelector('.century-content');
+                    const isExpanded = header.classList.contains('active');
 
-                // Close all other sections
-                document.querySelectorAll('.century-header.active').forEach(activeHeader => {
-                    if (activeHeader !== header) {
-                        activeHeader.classList.remove('active');
-                        const activeContent = activeHeader.parentElement.querySelector('.century-content');
-                        activeContent.classList.remove('expanded');
-                        activeContent.style.maxHeight = '0px';
+                    // Close all other sections
+                    document.querySelectorAll('.century-header.active').forEach(activeHeader => {
+                        if (activeHeader !== header) {
+                            activeHeader.classList.remove('active');
+                            const activeContent = activeHeader.parentElement.querySelector('.century-content');
+                            const activeInner = activeContent.querySelector('.century-inner');
+
+                            activeContent.classList.remove('expanded');
+                            activeContent.style.maxHeight = '0px';
+
+                            // Reset inner styling for other sections
+                            if (activeInner) {
+                                activeInner.style.transition = '';
+                                activeInner.style.opacity = '';
+                                activeInner.style.transform = '';
+                            }
+                        }
+                    });
+
+                    if (isExpanded) {
+                        // Collapse this section
+                        header.classList.remove('active');
+                        content.classList.remove('expanded');
+                        content.style.maxHeight = '0px';
+
+                        // Reset inner styling
+                        const inner = content.querySelector('.century-inner');
+                        if (inner) {
+                            inner.style.transition = '';
+                            inner.style.opacity = '';
+                            inner.style.transform = '';
+                        }
+                    } else {
+                        // Expand this section
+                        header.classList.add('active');
+                        content.classList.add('expanded');
+
+                        // Calculate and set the actual height for smooth animation
+                        const inner = content.querySelector('.century-inner');
+                        if (inner) {
+                            const height = inner.scrollHeight + 20; // Add extra padding for smooth animation
+                            content.style.maxHeight = height + 'px';
+
+                            // Add a subtle fade-in effect for the content
+                            inner.style.opacity = '0';
+                            inner.style.transform = 'translateY(-10px)';
+
+                            setTimeout(() => {
+                                inner.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                                inner.style.opacity = '1';
+                                inner.style.transform = 'translateY(0)';
+                            }, 100);
+                        }
                     }
-                });
 
-                if (isExpanded) {
-                    // Collapse this section
-                    header.classList.remove('active');
-                    content.classList.remove('expanded');
-                    content.style.maxHeight = '0px';
-                } else {
-                    // Expand this section
-                    header.classList.add('active');
-                    content.classList.add('expanded');
-
-                    // Calculate and set the actual height for smooth animation
-                    const inner = content.querySelector('.century-inner');
-                    const height = inner.scrollHeight;
-                    content.style.maxHeight = height + 'px';
+                    // Update activity if admin is logged in
+                    if (this.isAdminLoggedIn()) {
+                        this.lastActivity = Date.now();
+                    }
+                } catch (error) {
+                    console.error('Error toggling century section:', error);
                 }
+            }
 
-                // Update activity if admin is logged in
-                if (this.isAdminLoggedIn()) {
-                    this.lastActivity = Date.now();
+            viewTimelinePost(postId) {
+                try {
+                    const post = this.posts.find(p => p.id === postId);
+                    if (!post) {
+                        this.showErrorMessage('Post not found.');
+                        return;
+                    }
+
+                    // Populate the modal with post data
+                    const titleElement = document.getElementById('postViewTitle');
+                    const contentElement = document.getElementById('postViewContent');
+                    const metaElement = document.getElementById('postViewMeta');
+
+                    if (!titleElement || !contentElement || !metaElement) {
+                        console.error('Modal elements not found');
+                        return;
+                    }
+
+                    titleElement.textContent = post.title;
+                    contentElement.textContent = post.content;
+
+                    // Create meta information
+                    const metaHtml = `
+                        <div class="post-view-meta-item">
+                            <span>📅</span>
+                            <span>Posted on ${post.dateString}</span>
+                        </div>
+                        <div class="post-view-meta-item">
+                            <span>📝</span>
+                            <span>${post.wordCount || 0} words</span>
+                        </div>
+                        ${post.century ? `
+                            <div class="post-view-meta-item">
+                                <span class="post-view-century">${this.getCenturyDisplayName(post.century)}</span>
+                            </div>
+                        ` : ''}
+                        ${post.lastModified !== post.timestamp ? `
+                            <div class="post-view-meta-item">
+                                <span>✏️</span>
+                                <span>Edited ${new Date(post.lastModified).toLocaleDateString()}</span>
+                            </div>
+                        ` : ''}
+                    `;
+
+                    metaElement.innerHTML = metaHtml;
+
+                    // Show the modal
+                    const modal = document.getElementById('postViewModal');
+                    if (modal) {
+                        modal.style.display = 'block';
+                        document.body.style.overflow = 'hidden';
+                    }
+
+                    // Update activity if admin is logged in
+                    if (this.isAdminLoggedIn()) {
+                        this.lastActivity = Date.now();
+                    }
+                } catch (error) {
+                    console.error('Error viewing timeline post:', error);
+                    this.showErrorMessage('Error opening post. Please try again.');
                 }
+            }
+
+            getCenturyDisplayName(centuryValue) {
+                const centuries = this.generateCenturyOptions();
+                const century = centuries.find(c => c.value === centuryValue);
+                return century ? century.display : centuryValue;
             }
 
             // Rate Limiting System
@@ -1991,6 +2464,9 @@
                     headerIndicator.classList.remove('active');
                     footerAdminLink.style.display = 'inline';
                 }
+
+                // Refresh timeline to show/hide admin buttons
+                this.populateTimelineTab();
             }
 
             updateAdminStats() {
@@ -2161,6 +2637,10 @@
                 const extendSessionBtn = document.getElementById('extendSession');
                 const logoutNowBtn = document.getElementById('logoutNow');
 
+                // Post view modal elements
+                const postViewModal = document.getElementById('postViewModal');
+                const closePostViewModal = document.getElementById('closePostViewModal');
+
                 // Tab functionality
                 const tabBtns = document.querySelectorAll('.tab-btn');
 
@@ -2219,6 +2699,14 @@
                     btn.addEventListener('click', () => this.switchTab(btn.dataset.tab));
                 });
 
+                // Post view modal
+                closePostViewModal.addEventListener('click', () => this.closePostViewModal());
+                postViewModal.addEventListener('click', (e) => {
+                    if (e.target === postViewModal) {
+                        this.closePostViewModal();
+                    }
+                });
+
                 // Modal handling
                 modal.addEventListener('click', (e) => {
                     if (e.target === modal) {
@@ -2243,6 +2731,7 @@
                         this.closeModal();
                         this.closeAdminModal();
                         this.closeEditModal();
+                        this.closePostViewModal();
                         this.hideTimeoutWarning();
                         this.hideQuickPost();
                         this.hideConfirmationDialog();
@@ -2258,28 +2747,35 @@
             }
 
             switchTab(tabName) {
-                // Remove active class from all tab buttons
-                document.querySelectorAll('.tab-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                });
+                try {
+                    // Remove active class from all tab buttons
+                    document.querySelectorAll('.tab-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
 
-                // Remove active class from all tab panes
-                document.querySelectorAll('.tab-pane').forEach(pane => {
-                    pane.classList.remove('active');
-                });
+                    // Remove active class from all tab panes
+                    document.querySelectorAll('.tab-pane').forEach(pane => {
+                        pane.classList.remove('active');
+                    });
 
-                // Add active class to clicked tab button
-                document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+                    // Add active class to clicked tab button
+                    const targetBtn = document.querySelector(`[data-tab="${tabName}"]`);
+                    if (targetBtn) {
+                        targetBtn.classList.add('active');
+                    }
 
-                // Show corresponding tab pane
-                const targetPane = document.getElementById(`${tabName}Tab`);
-                if (targetPane) {
-                    targetPane.classList.add('active');
-                }
+                    // Show corresponding tab pane
+                    const targetPane = document.getElementById(`${tabName}Tab`);
+                    if (targetPane) {
+                        targetPane.classList.add('active');
+                    }
 
-                // Update activity if admin is logged in
-                if (this.isAdminLoggedIn()) {
-                    this.lastActivity = Date.now();
+                    // Update activity if admin is logged in
+                    if (this.isAdminLoggedIn()) {
+                        this.lastActivity = Date.now();
+                    }
+                } catch (error) {
+                    console.error('Error switching tabs:', error);
                 }
             }
 
@@ -2536,6 +3032,7 @@
                     this.posts.unshift(post);
                     this.savePosts();
                     this.renderPosts();
+                    this.populateTimelineTab();
                     this.hideQuickPost();
                     this.updateAdminStats();
 
@@ -2641,6 +3138,7 @@
                     this.posts.unshift(post);
                     this.savePosts();
                     this.renderPosts();
+                    this.populateTimelineTab();
                     this.closeModal();
                     this.updateAdminStats();
 
@@ -2712,7 +3210,7 @@
                     const isModified = post.lastModified !== post.timestamp;
 
                     return `
-                        <article class="post">
+                        <article class="post" data-post-id="${post.id}">
                             ${this.isAdminLoggedIn() ? `
                                 <div class="post-actions">
                                     <button class="post-action-btn edit" onclick="app.openEditModal(${post.id})">Edit</button>
@@ -2779,6 +3277,18 @@
                 this.currentEditingPost = null;
             }
 
+            closePostViewModal() {
+                try {
+                    const modal = document.getElementById('postViewModal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                    }
+                    document.body.style.overflow = 'auto';
+                } catch (error) {
+                    console.error('Error closing post view modal:', error);
+                }
+            }
+
             handleEditPost(e) {
                 e.preventDefault();
 
@@ -2805,6 +3315,7 @@
 
                     this.savePosts();
                     this.renderPosts();
+                    this.populateTimelineTab();
                     this.closeEditModal();
                     this.updateAdminStats();
 
@@ -2844,6 +3355,7 @@
 
                     this.savePosts();
                     this.renderPosts();
+                    this.populateTimelineTab();
                     this.updateAdminStats();
                     this.showSuccessMessage('Post deleted successfully!');
                 } catch (error) {
@@ -2876,6 +3388,44 @@
                 document.getElementById('dashTotalWords').textContent = totalWords.toLocaleString();
                 document.getElementById('dashAvgWords').textContent = avgWords;
                 document.getElementById('dashDataSize').textContent = dataSize;
+
+                this.updateCenturyStats();
+            }
+
+            updateCenturyStats() {
+                if (!this.isAdminLoggedIn()) return;
+
+                const centuryStatsContainer = document.getElementById('centuryStats');
+                if (!centuryStatsContainer) return;
+
+                const centuries = this.generateCenturyOptions();
+                const centuryPostCounts = {};
+
+                // Count posts per century
+                centuries.forEach(century => {
+                    centuryPostCounts[century.value] = this.getPostsByCentury(century.value).length;
+                });
+
+                // Count posts with no century
+                const postsWithoutCentury = this.posts.filter(post => !post.century).length;
+
+                centuryStatsContainer.innerHTML = `
+                    ${postsWithoutCentury > 0 ? `
+                        <div class="century-stat-item">
+                            <div class="century-stat-value">${postsWithoutCentury}</div>
+                            <div class="century-stat-label">No Century</div>
+                        </div>
+                    ` : ''}
+                    ${centuries.map(century => {
+                        const count = centuryPostCounts[century.value];
+                        return `
+                            <div class="century-stat-item ${count === 0 ? 'century-stat-empty' : ''}">
+                                <div class="century-stat-value">${count}</div>
+                                <div class="century-stat-label">${century.display}</div>
+                            </div>
+                        `;
+                    }).join('')}
+                `;
             }
 
             loadPosts() {
@@ -3032,6 +3582,7 @@
 
                     this.savePosts();
                     this.renderPosts();
+                    this.populateTimelineTab();
                     this.updateAdminStats();
                     this.updateDashboardStats();
 
@@ -3062,6 +3613,7 @@
                     this.posts = [];
                     this.savePosts();
                     this.renderPosts();
+                    this.populateTimelineTab();
                     this.updateAdminStats();
                     this.updateDashboardStats();
                     this.showSuccessMessage('All posts have been deleted.');
