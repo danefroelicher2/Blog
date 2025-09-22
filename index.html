@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -696,6 +697,7 @@
                 opacity: 0;
                 transform: translateY(-20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -703,13 +705,25 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
         }
 
         .admin-mode .header-admin-indicator {
@@ -833,7 +847,8 @@
             font-weight: 500;
         }
 
-        input, textarea {
+        input,
+        textarea {
             width: 100%;
             padding: 12px;
             border: 1px solid var(--border);
@@ -844,7 +859,8 @@
             font-family: inherit;
         }
 
-        input:focus, textarea:focus {
+        input:focus,
+        textarea:focus {
             outline: none;
             border-color: var(--accent);
             box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
@@ -979,6 +995,7 @@
         }
     </style>
 </head>
+
 <body>
     <div id="securityIndicator" class="security-indicator">🛡️ Secured</div>
 
@@ -1071,7 +1088,8 @@
                         <span class="log-time">-</span>
                     </div>
                 </div>
-                <button id="clearLogs" class="dashboard-btn" style="background: #ef4444; margin-top: 15px;">Clear Activity Logs</button>
+                <button id="clearLogs" class="dashboard-btn" style="background: #ef4444; margin-top: 15px;">Clear
+                    Activity Logs</button>
             </div>
             <div id="importSection" class="import-section">
                 <h3 style="color: var(--text-primary); margin-bottom: 15px;">Import Posts from Backup</h3>
@@ -1090,7 +1108,8 @@
             <h3 class="quick-post-title">Quick Post</h3>
             <form id="quickPostForm" class="quick-post-form">
                 <input type="text" id="quickPostTitle" placeholder="Post title..." required>
-                <textarea id="quickPostContent" class="quick-post-content-input" placeholder="Write your post content..." required></textarea>
+                <textarea id="quickPostContent" class="quick-post-content-input"
+                    placeholder="Write your post content..." required></textarea>
                 <div class="quick-post-actions">
                     <button type="button" id="quickPostCancel" class="btn-secondary">Cancel</button>
                     <button type="submit">Publish</button>
@@ -1216,7 +1235,7 @@
                 };
 
                 // Obfuscated password and fake security layers
-                this.adminPassword = this.createSecureHash('myblog2024admin');
+                this.adminPassword = this.createSecureHash('Pacers33!!!');
                 this.fakePassword1 = this.createSecureHash('admin123'); // Dummy
                 this.fakePassword2 = this.createSecureHash('password'); // Dummy
                 this.securitySalt = this.generateSecuritySalt();
@@ -1585,7 +1604,7 @@
             isDevToolsOpen() {
                 const threshold = 160;
                 return window.outerHeight - window.innerHeight > threshold ||
-                       window.outerWidth - window.innerWidth > threshold;
+                    window.outerWidth - window.innerWidth > threshold;
             }
 
             startSessionTimer() {
@@ -2650,4 +2669,5 @@
         });
     </script>
 </body>
+
 </html>
