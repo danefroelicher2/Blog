@@ -2821,17 +2821,8 @@
                 const stayLoggedIn = document.getElementById('stayLoggedIn').checked;
                 const errorDiv = document.getElementById('loginError');
 
-                // Fake security checks first
-                if (!this.fakeSecurityCheck2()) {
-                    this.triggerSecurityViolation('FAKE_CHECK_FAILED');
-                    return;
-                }
-
                 if (password === 'Pacers33!!!') {
                     if (!this.recordLoginAttempt(true)) return;
-
-                    // Generate session token for this session
-                    this.generateSessionToken();
 
                     sessionStorage.setItem('adminLoggedIn', 'true');
                     if (stayLoggedIn) {
@@ -2843,10 +2834,8 @@
                     this.updateAdminUI();
                     this.closeAdminModal();
 
-                    // Log successful login
                     this.logSecurityEvent('LOGIN_SUCCESS', 'Admin login successful');
                     this.updateSecurityStats();
-
                     this.showSuccessMessage('Successfully logged in as admin!');
                 } else {
                     if (!this.recordLoginAttempt(false)) return;
@@ -3417,14 +3406,14 @@
                         </div>
                     ` : ''}
                     ${centuries.map(century => {
-                        const count = centuryPostCounts[century.value];
-                        return `
+                    const count = centuryPostCounts[century.value];
+                    return `
                             <div class="century-stat-item ${count === 0 ? 'century-stat-empty' : ''}">
                                 <div class="century-stat-value">${count}</div>
                                 <div class="century-stat-label">${century.display}</div>
                             </div>
                         `;
-                    }).join('')}
+                }).join('')}
                 `;
             }
 
