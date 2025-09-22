@@ -1119,7 +1119,6 @@
 
         <div class="controls">
             <button id="createPostBtn" style="display: none;">Create Post</button>
-            <button id="exportBtn" class="btn-secondary">Export Posts</button>
         </div>
 
         <div id="postsContainer" class="posts-container">
@@ -1665,7 +1664,6 @@
                 const closeModal = document.getElementById('closeModal');
                 const cancelBtn = document.getElementById('cancelBtn');
                 const postForm = document.getElementById('postForm');
-                const exportBtn = document.getElementById('exportBtn');
                 const modal = document.getElementById('createPostModal');
 
                 const footerAdminLink = document.getElementById('footerAdminLink');
@@ -1713,7 +1711,6 @@
                 createPostBtn.addEventListener('click', () => this.openModal());
                 closeModal.addEventListener('click', () => this.closeModal());
                 cancelBtn.addEventListener('click', () => this.closeModal());
-                exportBtn.addEventListener('click', () => this.exportPosts());
                 postForm.addEventListener('submit', (e) => this.handleSubmit(e));
 
                 // Admin login
