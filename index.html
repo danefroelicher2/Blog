@@ -1020,6 +1020,112 @@
             background: #dc2626;
         }
 
+        /* Discourses Container Styles */
+        .discourses-container {
+            max-width: 100%;
+        }
+
+        .discourses-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .discourses-header h3 {
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .discourses-header p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        /* Subtab Navigation Styles */
+        .subtab-nav {
+            display: flex;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 4px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+
+        .subtab-btn {
+            flex: 1;
+            min-width: max-content;
+            background: transparent;
+            color: var(--text-secondary);
+            border: none;
+            padding: 12px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.95rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .subtab-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            transform: translateY(-1px);
+        }
+
+        .subtab-btn.active {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 2px 8px rgba(74, 144, 226, 0.2);
+        }
+
+        .subtab-btn.active:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        /* Subtab Content Styles */
+        .subtab-content {
+            min-height: 300px;
+        }
+
+        .subtab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .subtab-pane.active {
+            display: block;
+        }
+
+        .subtab-placeholder {
+            text-align: center;
+            padding: 60px 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        .subtab-placeholder h4 {
+            font-size: 1.5rem;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .subtab-placeholder p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .admin-toolbar {
@@ -1470,7 +1576,7 @@
         <div class="tab-container">
             <div class="tab-nav">
                 <button class="tab-btn active" data-tab="home">Home</button>
-                <button class="tab-btn" data-tab="timeline">Timeline</button>
+                <button class="tab-btn" data-tab="timeline">Discourses</button>
             </div>
         </div>
 
@@ -1546,15 +1652,63 @@
                 </div>
             </div>
 
-            <!-- Timeline Tab -->
+            <!-- Discourses Tab -->
             <div id="timelineTab" class="tab-pane">
-                <div class="timeline-container">
-                    <div class="timeline-header">
-                        <h3>Historical Timeline</h3>
-                        <p>Explore posts organized by historical periods</p>
+                <div class="discourses-container">
+                    <div class="discourses-header">
+                        <h3>Discourses</h3>
+                        <p>Explore different domains of knowledge and thought</p>
                     </div>
-                    <div id="timelineAccordion" class="timeline-accordion">
-                        <!-- Accordion sections will be populated by JavaScript -->
+
+                    <!-- Subtab Navigation -->
+                    <div class="subtab-nav">
+                        <button class="subtab-btn active" data-subtab="history">History</button>
+                        <button class="subtab-btn" data-subtab="philosophy">Philosophy</button>
+                        <button class="subtab-btn" data-subtab="literature">Literature</button>
+                        <button class="subtab-btn" data-subtab="science">Science</button>
+                        <button class="subtab-btn" data-subtab="technology">Technology</button>
+                    </div>
+
+                    <!-- Subtab Content -->
+                    <div class="subtab-content">
+                        <!-- History Subtab -->
+                        <div id="historySubtab" class="subtab-pane active">
+                            <div id="timelineAccordion" class="timeline-accordion">
+                                <!-- Accordion sections will be populated by JavaScript -->
+                            </div>
+                        </div>
+
+                        <!-- Philosophy Subtab -->
+                        <div id="philosophySubtab" class="subtab-pane">
+                            <div class="subtab-placeholder">
+                                <h4>Philosophy</h4>
+                                <p>Coming soon</p>
+                            </div>
+                        </div>
+
+                        <!-- Literature Subtab -->
+                        <div id="literatureSubtab" class="subtab-pane">
+                            <div class="subtab-placeholder">
+                                <h4>Literature</h4>
+                                <p>Coming soon</p>
+                            </div>
+                        </div>
+
+                        <!-- Science Subtab -->
+                        <div id="scienceSubtab" class="subtab-pane">
+                            <div class="subtab-placeholder">
+                                <h4>Science</h4>
+                                <p>Coming soon</p>
+                            </div>
+                        </div>
+
+                        <!-- Technology Subtab -->
+                        <div id="technologySubtab" class="subtab-pane">
+                            <div class="subtab-placeholder">
+                                <h4>Technology</h4>
+                                <p>Coming soon</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2453,6 +2607,12 @@
                     btn.addEventListener('click', () => this.switchTab(btn.dataset.tab));
                 });
 
+                // Subtab switching
+                const subtabBtns = document.querySelectorAll('.subtab-btn');
+                subtabBtns.forEach(btn => {
+                    btn.addEventListener('click', () => this.switchSubtab(btn.dataset.subtab));
+                });
+
                 // Post view modal
                 closePostViewModal.addEventListener('click', () => this.closePostViewModal());
                 postViewModal.addEventListener('click', (e) => {
@@ -2529,6 +2689,39 @@
                     }
                 } catch (error) {
                     console.error('Error switching tabs:', error);
+                }
+            }
+
+            switchSubtab(subtabName) {
+                try {
+                    // Remove active class from all subtab buttons
+                    document.querySelectorAll('.subtab-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+
+                    // Remove active class from all subtab panes
+                    document.querySelectorAll('.subtab-pane').forEach(pane => {
+                        pane.classList.remove('active');
+                    });
+
+                    // Add active class to clicked subtab button
+                    const targetBtn = document.querySelector(`[data-subtab="${subtabName}"]`);
+                    if (targetBtn) {
+                        targetBtn.classList.add('active');
+                    }
+
+                    // Show corresponding subtab pane
+                    const targetPane = document.getElementById(`${subtabName}Subtab`);
+                    if (targetPane) {
+                        targetPane.classList.add('active');
+                    }
+
+                    // Update activity if admin is logged in
+                    if (this.isAdminLoggedIn()) {
+                        this.lastActivity = Date.now();
+                    }
+                } catch (error) {
+                    console.error('Error switching subtabs:', error);
                 }
             }
 
