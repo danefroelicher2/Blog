@@ -2208,28 +2208,34 @@
             }
 
             generateCenturyOptions() {
-                const centuries = [];
+                const timePeriods = [
+                    {
+                        value: '1776-present',
+                        display: '1776 – Present'
+                    },
+                    {
+                        value: '1000-1776ce',
+                        display: '1000 – 1776 CE'
+                    },
+                    {
+                        value: '0-1000ce',
+                        display: '0 – 1000 CE'
+                    },
+                    {
+                        value: '5000-0bce',
+                        display: '5000 – 0 BCE'
+                    },
+                    {
+                        value: '50000-5000bce',
+                        display: '50,000 – 5000 BCE'
+                    },
+                    {
+                        value: '50000+bce',
+                        display: '50,000+ BCE'
+                    }
+                ];
 
-                // BC centuries: 10,000 BC down to 1,000 BC
-                for (let year = 10000; year >= 1000; year -= 1000) {
-                    centuries.push({
-                        value: `${year}BC`,
-                        display: `${year.toLocaleString()} BC`
-                    });
-                }
-
-                // AD centuries: 1000s, 2000s
-                centuries.push({
-                    value: '1000s',
-                    display: '1000s'
-                });
-
-                centuries.push({
-                    value: '2000s',
-                    display: '2000s'
-                });
-
-                return centuries;
+                return timePeriods;
             }
 
             populateHistorySubtab() {
@@ -2240,21 +2246,21 @@
                         return;
                     }
 
-                    const centuries = this.generateCenturyOptions();
+                    const timePeriods = this.generateCenturyOptions();
 
-                    timelineAccordion.innerHTML = centuries.map(century => {
-                        const centuryPosts = this.getPostsByCentury(century.value);
-                        const hasPosts = centuryPosts.length > 0;
+                    timelineAccordion.innerHTML = timePeriods.map(period => {
+                        const periodPosts = this.getPostsByTimePeriod(period.value);
+                        const hasPosts = periodPosts.length > 0;
 
                         return `
-                            <div class="century-section" data-century="${century.value}">
-                                <div class="century-header" onclick="app.toggleCenturySection('${century.value}')">
-                                    <h4 class="century-title">${century.display}</h4>
+                            <div class="century-section" data-century="${period.value}">
+                                <div class="century-header" onclick="app.toggleCenturySection('${period.value}')">
+                                    <h4 class="century-title">${period.display}</h4>
                                     <span class="century-arrow">▼</span>
                                 </div>
                                 <div class="century-content">
                                     <div class="century-inner">
-                                        ${hasPosts ? this.renderTimelinePosts(centuryPosts) : '<div class="century-empty">No articles yet</div>'}
+                                        ${hasPosts ? this.renderTimelinePosts(periodPosts) : '<div class="century-empty">No articles yet</div>'}
                                     </div>
                                 </div>
                             </div>
@@ -2265,9 +2271,9 @@
                 }
             }
 
-            getPostsByCentury(centuryValue) {
+            getPostsByTimePeriod(timePeriodValue) {
                 return this.posts
-                    .filter(post => post.century === centuryValue)
+                    .filter(post => post.century === timePeriodValue)
                     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
             }
 
@@ -2405,7 +2411,7 @@
                         </div>
                         ${post.century ? `
                             <div class="post-view-meta-item">
-                                <span class="post-view-century">${this.getCenturyDisplayName(post.century)}</span>
+                                <span class="post-view-century">${this.getTimePeriodDisplayName(post.century)}</span>
                             </div>
                         ` : ''}
                         ${post.lastModified !== post.timestamp ? `
@@ -2435,10 +2441,10 @@
                 }
             }
 
-            getCenturyDisplayName(centuryValue) {
-                const centuries = this.generateCenturyOptions();
-                const century = centuries.find(c => c.value === centuryValue);
-                return century ? century.display : centuryValue;
+            getTimePeriodDisplayName(timePeriodValue) {
+                const timePeriods = this.generateCenturyOptions();
+                const period = timePeriods.find(p => p.value === timePeriodValue);
+                return period ? period.display : timePeriodValue;
             }
 
             // Rate Limiting System
@@ -3471,30 +3477,30 @@
                 const centuryStatsContainer = document.getElementById('centuryStats');
                 if (!centuryStatsContainer) return;
 
-                const centuries = this.generateCenturyOptions();
-                const centuryPostCounts = {};
+                const timePeriods = this.generateCenturyOptions();
+                const periodPostCounts = {};
 
-                // Count posts per century
-                centuries.forEach(century => {
-                    centuryPostCounts[century.value] = this.getPostsByCentury(century.value).length;
+                // Count posts per time period
+                timePeriods.forEach(period => {
+                    periodPostCounts[period.value] = this.getPostsByTimePeriod(period.value).length;
                 });
 
-                // Count posts with no century
-                const postsWithoutCentury = this.posts.filter(post => !post.century).length;
+                // Count posts with no time period assigned
+                const postsWithoutPeriod = this.posts.filter(post => !post.century).length;
 
                 centuryStatsContainer.innerHTML = `
-                    ${postsWithoutCentury > 0 ? `
+                    ${postsWithoutPeriod > 0 ? `
                         <div class="century-stat-item">
-                            <div class="century-stat-value">${postsWithoutCentury}</div>
-                            <div class="century-stat-label">No Century</div>
+                            <div class="century-stat-value">${postsWithoutPeriod}</div>
+                            <div class="century-stat-label">No Time Period</div>
                         </div>
                     ` : ''}
-                    ${centuries.map(century => {
-                    const count = centuryPostCounts[century.value];
+                    ${timePeriods.map(period => {
+                    const count = periodPostCounts[period.value];
                     return `
                             <div class="century-stat-item ${count === 0 ? 'century-stat-empty' : ''}">
                                 <div class="century-stat-value">${count}</div>
-                                <div class="century-stat-label">${century.display}</div>
+                                <div class="century-stat-label">${period.display}</div>
                             </div>
                         `;
                 }).join('')}
