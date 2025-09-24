@@ -1050,12 +1050,27 @@
         /* Subtab Navigation Styles */
         .subtab-nav {
             display: flex;
-            background: var(--bg-secondary);
+            background: var(--bg-primary);
             border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 4px;
-            margin-bottom: 20px;
+            border-radius: 10px;
+            padding: 6px;
+            margin-bottom: 25px;
             overflow-x: auto;
+            box-shadow: 0 2px 12px var(--shadow);
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        .subtab-nav::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            border-radius: 10px;
+            z-index: -1;
         }
 
         .subtab-btn {
@@ -1064,66 +1079,176 @@
             background: transparent;
             color: var(--text-secondary);
             border: none;
-            padding: 12px 16px;
-            border-radius: 6px;
+            padding: 14px 20px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            font-size: 0.95rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.92rem;
             font-weight: 500;
             white-space: nowrap;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.3px;
+        }
+
+        .subtab-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.6s;
+        }
+
+        .subtab-btn:hover::before {
+            left: 100%;
         }
 
         .subtab-btn:hover {
             background: var(--bg-tertiary);
             color: var(--text-primary);
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
         }
 
         .subtab-btn.active {
-            background: var(--accent);
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
             color: white;
-            box-shadow: 0 2px 8px rgba(74, 144, 226, 0.2);
+            box-shadow: 0 4px 20px rgba(74, 144, 226, 0.3);
+            font-weight: 600;
+            transform: translateY(-1px);
+        }
+
+        .subtab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 30px;
+            height: 2px;
+            background: white;
+            transform: translateX(-50%);
+            border-radius: 2px;
+            animation: slideUp 0.3s ease;
         }
 
         .subtab-btn.active:hover {
-            background: var(--accent-hover);
-            transform: translateY(-1px);
+            background: linear-gradient(135deg, var(--accent-hover) 0%, var(--accent) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(74, 144, 226, 0.4);
+        }
+
+        @keyframes slideUp {
+            from {
+                width: 0;
+                opacity: 0;
+            }
+            to {
+                width: 30px;
+                opacity: 1;
+            }
         }
 
         /* Subtab Content Styles */
         .subtab-content {
-            min-height: 300px;
+            min-height: 400px;
+            position: relative;
         }
 
         .subtab-pane {
             display: none;
-            animation: fadeIn 0.3s ease-in-out;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .subtab-pane.active {
             display: block;
+            opacity: 1;
+            transform: translateY(0);
+            animation: subtabFadeIn 0.4s ease-out;
         }
 
+        @keyframes subtabFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Enhanced Placeholder Content Styles */
         .subtab-placeholder {
             text-align: center;
-            padding: 60px 20px;
-            background: var(--bg-secondary);
+            padding: 80px 40px;
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: 16px;
             margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .subtab-placeholder::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(74, 144, 226, 0.05) 0%, transparent 70%);
+            animation: subtabGlow 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes subtabGlow {
+            from {
+                opacity: 0.3;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 0.6;
+                transform: scale(1.2);
+            }
         }
 
         .subtab-placeholder h4 {
-            font-size: 1.5rem;
-            margin-bottom: 12px;
+            font-size: 1.8rem;
+            margin-bottom: 16px;
             color: var(--text-primary);
             font-weight: 600;
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .subtab-placeholder p {
             color: var(--text-muted);
-            font-size: 1.1rem;
+            font-size: 1.15rem;
             margin: 0;
+            position: relative;
+            z-index: 2;
+            font-style: italic;
+            letter-spacing: 0.5px;
+        }
+
+        /* Subtab icon styling */
+        .subtab-btn .subtab-icon {
+            display: inline-block;
+            margin-right: 8px;
+            font-size: 1.1em;
+            opacity: 0.8;
+            transition: all 0.3s ease;
+        }
+
+        .subtab-btn:hover .subtab-icon,
+        .subtab-btn.active .subtab-icon {
+            opacity: 1;
+            transform: scale(1.1);
         }
 
         /* Responsive adjustments */
@@ -1163,6 +1288,56 @@
 
             .tab-container {
                 margin-bottom: 20px;
+            }
+
+            /* Subtab responsive design */
+            .subtab-nav {
+                padding: 4px;
+                margin-bottom: 20px;
+                border-radius: 8px;
+                overflow-x: auto;
+                scrollbar-width: thin;
+            }
+
+            .subtab-nav::-webkit-scrollbar {
+                height: 4px;
+            }
+
+            .subtab-nav::-webkit-scrollbar-track {
+                background: var(--bg-secondary);
+                border-radius: 2px;
+            }
+
+            .subtab-nav::-webkit-scrollbar-thumb {
+                background: var(--accent);
+                border-radius: 2px;
+            }
+
+            .subtab-btn {
+                padding: 10px 14px;
+                font-size: 0.85rem;
+                min-width: max-content;
+                border-radius: 6px;
+                letter-spacing: 0.2px;
+            }
+
+            .subtab-content {
+                min-height: 300px;
+            }
+
+            .subtab-placeholder {
+                padding: 50px 20px;
+                margin: 15px 0;
+                border-radius: 12px;
+            }
+
+            .subtab-placeholder h4 {
+                font-size: 1.4rem;
+                margin-bottom: 12px;
+            }
+
+            .subtab-placeholder p {
+                font-size: 1rem;
             }
 
             .timeline-placeholder {
@@ -1558,6 +1733,58 @@
                 font-size: 0.8rem;
                 padding: 3px 10px;
             }
+
+            /* Subtab mobile styles */
+            .subtab-nav {
+                padding: 3px;
+                margin-bottom: 15px;
+                box-shadow: 0 1px 8px var(--shadow);
+            }
+
+            .subtab-btn {
+                padding: 8px 12px;
+                font-size: 0.8rem;
+                letter-spacing: 0.1px;
+                border-radius: 5px;
+            }
+
+            .subtab-btn.active::after {
+                width: 20px;
+                height: 1.5px;
+            }
+
+            .subtab-content {
+                min-height: 250px;
+            }
+
+            .subtab-placeholder {
+                padding: 40px 15px;
+                margin: 10px 0;
+                border-radius: 10px;
+            }
+
+            .subtab-placeholder h4 {
+                font-size: 1.2rem;
+                margin-bottom: 8px;
+            }
+
+            .subtab-placeholder p {
+                font-size: 0.9rem;
+                letter-spacing: 0.3px;
+            }
+
+            .discourses-header {
+                padding: 15px;
+                margin-bottom: 20px;
+            }
+
+            .discourses-header h3 {
+                font-size: 1.2rem;
+            }
+
+            .discourses-header p {
+                font-size: 0.9rem;
+            }
         }
     </style>
 </head>
@@ -1868,7 +2095,7 @@
                 this.initActivityTracking();
                 this.initSecurityFeatures();
                 this.populateCenturyDropdowns();
-                this.populateTimelineTab();
+                this.initDiscourseSubtabs();
                 this.setUserMode();
             }
 
@@ -2024,11 +2251,11 @@
                 return centuries;
             }
 
-            populateTimelineTab() {
+            populateHistorySubtab() {
                 try {
                     const timelineAccordion = document.getElementById('timelineAccordion');
                     if (!timelineAccordion) {
-                        console.warn('Timeline accordion element not found');
+                        console.warn('History timeline accordion element not found');
                         return;
                     }
 
@@ -2053,7 +2280,7 @@
                         `;
                     }).join('');
                 } catch (error) {
-                    console.error('Error populating timeline tab:', error);
+                    console.error('Error populating history subtab:', error);
                 }
             }
 
@@ -2068,7 +2295,7 @@
                     <div class="century-posts">
                         ${posts.map(post => `
                             <div class="timeline-post-item">
-                                <div class="timeline-post-title" onclick="app.viewTimelinePost(${post.id})">${this.escapeHtml(post.title)}</div>
+                                <div class="timeline-post-title" onclick="app.viewDiscoursePost(${post.id})">${this.escapeHtml(post.title)}</div>
                                 <div class="timeline-post-meta">
                                     <div class="timeline-post-date">
                                         <span>📅</span>
@@ -2164,7 +2391,7 @@
                 }
             }
 
-            viewTimelinePost(postId) {
+            viewDiscoursePost(postId) {
                 try {
                     const post = this.posts.find(p => p.id === postId);
                     if (!post) {
@@ -2402,7 +2629,7 @@
                 }
 
                 // Refresh timeline to show/hide admin buttons
-                this.populateTimelineTab();
+                this.populateHistorySubtab();
             }
 
             updateAdminStats() {
@@ -2607,12 +2834,6 @@
                     btn.addEventListener('click', () => this.switchTab(btn.dataset.tab));
                 });
 
-                // Subtab switching
-                const subtabBtns = document.querySelectorAll('.subtab-btn');
-                subtabBtns.forEach(btn => {
-                    btn.addEventListener('click', () => this.switchSubtab(btn.dataset.subtab));
-                });
-
                 // Post view modal
                 closePostViewModal.addEventListener('click', () => this.closePostViewModal());
                 postViewModal.addEventListener('click', (e) => {
@@ -2681,6 +2902,19 @@
                     const targetPane = document.getElementById(`${tabName}Tab`);
                     if (targetPane) {
                         targetPane.classList.add('active');
+
+                        // Special handling for timeline/discourses tab
+                        if (tabName === 'timeline') {
+                            // Initialize discourse subtabs if they haven't been initialized yet
+                            const subtabButtons = targetPane.querySelectorAll('.subtab-btn');
+                            if (subtabButtons.length > 0) {
+                                const activeSubtab = targetPane.querySelector('.subtab-btn.active');
+                                if (!activeSubtab) {
+                                    // No active subtab, initialize the discourse system
+                                    this.initDiscourseSubtabs();
+                                }
+                            }
+                        }
                     }
 
                     // Update activity if admin is logged in
@@ -2694,13 +2928,30 @@
 
             switchSubtab(subtabName) {
                 try {
+                    // Validate subtab name
+                    const validSubtabs = ['history', 'philosophy', 'literature', 'science', 'technology'];
+                    if (!validSubtabs.includes(subtabName)) {
+                        console.warn(`Invalid subtab name: ${subtabName}`);
+                        return;
+                    }
+
                     // Remove active class from all subtab buttons
-                    document.querySelectorAll('.subtab-btn').forEach(btn => {
+                    const subtabButtons = document.querySelectorAll('.subtab-btn');
+                    if (subtabButtons.length === 0) {
+                        console.warn('No subtab buttons found');
+                        return;
+                    }
+                    subtabButtons.forEach(btn => {
                         btn.classList.remove('active');
                     });
 
                     // Remove active class from all subtab panes
-                    document.querySelectorAll('.subtab-pane').forEach(pane => {
+                    const subtabPanes = document.querySelectorAll('.subtab-pane');
+                    if (subtabPanes.length === 0) {
+                        console.warn('No subtab panes found');
+                        return;
+                    }
+                    subtabPanes.forEach(pane => {
                         pane.classList.remove('active');
                     });
 
@@ -2708,20 +2959,79 @@
                     const targetBtn = document.querySelector(`[data-subtab="${subtabName}"]`);
                     if (targetBtn) {
                         targetBtn.classList.add('active');
+                    } else {
+                        console.warn(`Subtab button with data-subtab="${subtabName}" not found`);
                     }
 
                     // Show corresponding subtab pane
                     const targetPane = document.getElementById(`${subtabName}Subtab`);
                     if (targetPane) {
                         targetPane.classList.add('active');
+
+                        // Special handling for history subtab - populate timeline if needed
+                        if (subtabName === 'history') {
+                            // Check if timeline needs to be populated
+                            const timelineAccordion = document.getElementById('timelineAccordion');
+                            if (timelineAccordion && timelineAccordion.children.length === 0) {
+                                this.populateHistorySubtab();
+                            }
+                        }
+                    } else {
+                        console.warn(`Subtab pane with id="${subtabName}Subtab" not found`);
                     }
 
                     // Update activity if admin is logged in
                     if (this.isAdminLoggedIn()) {
                         this.lastActivity = Date.now();
                     }
+
+                    // Log subtab switch for analytics
+                    this.logSecurityEvent('SUBTAB_SWITCHED', `Switched to subtab: ${subtabName}`);
+
                 } catch (error) {
                     console.error('Error switching subtabs:', error);
+                    this.showErrorMessage('Error switching between discourse sections.');
+                }
+            }
+
+            initDiscourseSubtabs() {
+                try {
+                    // Initialize history subtab with timeline data
+                    this.populateHistorySubtab();
+
+                    // Set up event listeners for subtab buttons
+                    const subtabButtons = document.querySelectorAll('.subtab-btn');
+                    if (subtabButtons.length > 0) {
+                        subtabButtons.forEach(btn => {
+                            // Remove existing listeners to prevent duplicates
+                            btn.removeEventListener('click', this.subtabClickHandler);
+
+                            // Create bound handler
+                            this.subtabClickHandler = (e) => {
+                                e.preventDefault();
+                                this.switchSubtab(btn.dataset.subtab);
+                            };
+
+                            // Add new listener
+                            btn.addEventListener('click', this.subtabClickHandler);
+                        });
+
+                        console.log(`Initialized ${subtabButtons.length} discourse subtab buttons`);
+                    } else {
+                        console.warn('No discourse subtab buttons found for initialization');
+                    }
+
+                    // Ensure History subtab is active by default
+                    const historyBtn = document.querySelector('[data-subtab="history"]');
+                    const historyPane = document.getElementById('historySubtab');
+
+                    if (historyBtn && historyPane) {
+                        historyBtn.classList.add('active');
+                        historyPane.classList.add('active');
+                    }
+
+                } catch (error) {
+                    console.error('Error initializing discourse subtabs:', error);
                 }
             }
 
@@ -2920,7 +3230,7 @@
                     this.posts.unshift(post);
                     this.savePosts();
                     this.renderPosts();
-                    this.populateTimelineTab();
+                    this.populateHistorySubtab();
                     this.closeModal();
                     this.updateAdminStats();
 
@@ -3097,7 +3407,7 @@
 
                     this.savePosts();
                     this.renderPosts();
-                    this.populateTimelineTab();
+                    this.populateHistorySubtab();
                     this.closeEditModal();
                     this.updateAdminStats();
 
@@ -3137,7 +3447,7 @@
 
                     this.savePosts();
                     this.renderPosts();
-                    this.populateTimelineTab();
+                    this.populateHistorySubtab();
                     this.updateAdminStats();
                     this.showSuccessMessage('Post deleted successfully!');
                 } catch (error) {
