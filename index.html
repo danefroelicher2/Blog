@@ -712,8 +712,7 @@
 
         /* Tab System Styles */
         .tab-container {
-            margin-bottom: 30px;
-            border-bottom: 1px solid var(--border);
+            margin-bottom: 40px;
         }
 
         .tab-nav {
@@ -1023,28 +1022,38 @@
         /* Discourses Container Styles */
         .discourses-container {
             max-width: 100%;
+            padding-top: 20px;
         }
 
         .discourses-header {
             text-align: center;
-            margin-bottom: 30px;
-            padding: 20px;
-            background: var(--bg-secondary);
-            border-radius: 12px;
+            margin-bottom: 40px;
+            padding: 25px 20px;
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            border-radius: 16px;
             border: 1px solid var(--border);
+            box-shadow: 0 2px 12px var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .discourses-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
         }
 
         .discourses-header h3 {
-            font-size: 1.4rem;
-            margin-bottom: 8px;
-            color: var(--text-primary);
-            font-weight: 500;
-        }
-
-        .discourses-header p {
-            color: var(--text-secondary);
-            font-size: 1rem;
+            font-size: 1.8rem;
             margin: 0;
+            color: var(--text-primary);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         /* Subtab Navigation Styles */
@@ -1052,11 +1061,12 @@
             display: flex;
             background: var(--bg-primary);
             border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 6px;
-            margin-bottom: 25px;
+            border-radius: 12px;
+            padding: 8px;
+            margin-bottom: 35px;
+            margin-top: 20px;
             overflow-x: auto;
-            box-shadow: 0 2px 12px var(--shadow);
+            box-shadow: 0 4px 20px var(--shadow);
             backdrop-filter: blur(10px);
             position: relative;
         }
@@ -1098,7 +1108,7 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
             transition: left 0.6s;
         }
 
@@ -1110,7 +1120,7 @@
             background: var(--bg-tertiary);
             color: var(--text-primary);
             transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
         }
 
         .subtab-btn.active {
@@ -1145,6 +1155,7 @@
                 width: 0;
                 opacity: 0;
             }
+
             to {
                 width: 30px;
                 opacity: 1;
@@ -1176,6 +1187,7 @@
                 opacity: 0;
                 transform: translateY(30px) scale(0.95);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0) scale(1);
@@ -1210,6 +1222,7 @@
                 opacity: 0.3;
                 transform: scale(0.8);
             }
+
             to {
                 opacity: 0.6;
                 transform: scale(1.2);
@@ -1223,7 +1236,7 @@
             font-weight: 600;
             position: relative;
             z-index: 2;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .subtab-placeholder p {
@@ -1689,6 +1702,28 @@
                 width: 100%;
                 max-width: 300px;
             }
+
+            /* Discourse tablet responsive styles */
+            .discourses-container {
+                padding-top: 15px;
+            }
+
+            .discourses-header {
+                padding: 20px 15px;
+                margin-bottom: 35px;
+                border-radius: 14px;
+            }
+
+            .discourses-header h3 {
+                font-size: 1.6rem;
+            }
+
+            .subtab-nav {
+                margin-top: 15px;
+                margin-bottom: 30px;
+                padding: 6px;
+                border-radius: 10px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -1773,17 +1808,18 @@
                 letter-spacing: 0.3px;
             }
 
+            .discourses-container {
+                padding-top: 15px;
+            }
+
             .discourses-header {
-                padding: 15px;
-                margin-bottom: 20px;
+                padding: 20px 15px;
+                margin-bottom: 30px;
+                border-radius: 12px;
             }
 
             .discourses-header h3 {
-                font-size: 1.2rem;
-            }
-
-            .discourses-header p {
-                font-size: 0.9rem;
+                font-size: 1.4rem;
             }
         }
     </style>
@@ -1884,7 +1920,6 @@
                 <div class="discourses-container">
                     <div class="discourses-header">
                         <h3>Discourses</h3>
-                        <p>Explore different domains of knowledge and thought</p>
                     </div>
 
                     <!-- Subtab Navigation -->
