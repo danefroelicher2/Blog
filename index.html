@@ -1025,36 +1025,6 @@
             padding-top: 20px;
         }
 
-        .discourses-header {
-            text-align: center;
-            margin-bottom: 40px;
-            padding: 25px 20px;
-            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            box-shadow: 0 2px 12px var(--shadow);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .discourses-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, var(--accent), transparent);
-        }
-
-        .discourses-header h3 {
-            font-size: 1.8rem;
-            margin: 0;
-            color: var(--text-primary);
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
 
         /* Subtab Navigation Styles */
         .subtab-nav {
@@ -1064,7 +1034,7 @@
             border-radius: 12px;
             padding: 8px;
             margin-bottom: 35px;
-            margin-top: 20px;
+            margin-top: 0;
             overflow-x: auto;
             box-shadow: 0 4px 20px var(--shadow);
             backdrop-filter: blur(10px);
@@ -1708,18 +1678,8 @@
                 padding-top: 15px;
             }
 
-            .discourses-header {
-                padding: 20px 15px;
-                margin-bottom: 35px;
-                border-radius: 14px;
-            }
-
-            .discourses-header h3 {
-                font-size: 1.6rem;
-            }
-
             .subtab-nav {
-                margin-top: 15px;
+                margin-top: 0;
                 margin-bottom: 30px;
                 padding: 6px;
                 border-radius: 10px;
@@ -1810,16 +1770,6 @@
 
             .discourses-container {
                 padding-top: 15px;
-            }
-
-            .discourses-header {
-                padding: 20px 15px;
-                margin-bottom: 30px;
-                border-radius: 12px;
-            }
-
-            .discourses-header h3 {
-                font-size: 1.4rem;
             }
         }
     </style>
@@ -1918,10 +1868,6 @@
             <!-- Discourses Tab -->
             <div id="timelineTab" class="tab-pane">
                 <div class="discourses-container">
-                    <div class="discourses-header">
-                        <h3>Discourses</h3>
-                    </div>
-
                     <!-- Subtab Navigation -->
                     <div class="subtab-nav">
                         <button class="subtab-btn active" data-subtab="history">History</button>
