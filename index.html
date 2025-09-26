@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Modern Blog</title>
+
+    <!-- Supabase JavaScript Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -1813,8 +1816,6 @@
             <div class="admin-toolbar-right">
                 <button id="dashboardToggle">Dashboard</button>
                 <button id="adminCreatePostBtn">Create Post</button>
-                <button id="refreshPostsBtn" class="btn-secondary" title="Refresh posts from GitHub">🔄 Refresh</button>
-                <button id="clearTokenBtn" class="btn-secondary" title="Clear saved GitHub token">Clear Token</button>
                 <button id="adminLogoutBtn" class="btn-danger">Logout</button>
             </div>
         </div>
@@ -2038,17 +2039,13 @@
     <script>
         class BlogApp {
             constructor() {
-                // GitHub API Configuration
-                this.githubConfig = {
-                    owner: 'danefroelicher2',  // Your GitHub username
-                    repo: 'Blog',              // Your repository name
-                    path: 'data/posts.json',  // Path to posts file
-                    branch: 'main'             // Branch name
-                };
-
-                this.githubToken = null;  // Will be set when admin logs in
                 this.posts = [];
-                this.currentFileSHA = null;  // Track current GitHub file SHA for conflict resolution
+
+                // Supabase Configuration
+                // Your actual Supabase configuration:
+                this.supabaseUrl = 'https://cehdeiggnmsaccdazvgm.supabase.co';
+                this.supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNlaGRlaWdnbm1zYWNjZGF6dmdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4OTQyMjgsImV4cCI6MjA3NDQ3MDIyOH0.noHwLw-MZEWfp6gBisXwzEIRfmoV6cNb2uyy2Zv6pBE';
+                this.supabase = null; // Will be initialized in init()
 
                 // Security Configuration
                 this.securityConfig = {
@@ -2087,8 +2084,23 @@
                 this.initDiscourseSubtabs();
                 this.setUserMode();
 
-                // Load posts from GitHub
+                // Initialize Supabase client
+                this.initSupabase();
+
+                // Load posts from database
                 this.initializePosts();
+            }
+
+            initSupabase() {
+                try {
+                    // Initialize Supabase client with configuration
+                    const { createClient } = supabase;
+                    this.supabase = createClient(this.supabaseUrl, this.supabaseKey);
+                    console.log('Supabase client initialized successfully');
+                } catch (error) {
+                    console.error('Error initializing Supabase:', error);
+                    this.showErrorMessage('Database connection failed. Using offline mode.');
+                }
             }
 
             async initializePosts() {
@@ -2098,7 +2110,7 @@
                     this.renderPosts();
                     this.updateAdminStats();
                 } catch (error) {
-                    console.error('Error loading posts from GitHub:', error);
+                    console.error('Error loading posts from database:', error);
                     this.showErrorMessage('Failed to load posts. Using offline mode.');
                     // Fallback to localStorage for offline support
                     this.posts = this.loadPostsFromLocalStorage();
@@ -2568,12 +2580,6 @@
             checkExistingSession() {
                 if (localStorage.getItem('adminPersistent') !== 'true') {
                     sessionStorage.removeItem('adminLoggedIn');
-                } else {
-                    // Always restore GitHub token from localStorage (persistent across sessions)
-                    const savedToken = localStorage.getItem('githubToken');
-                    if (savedToken) {
-                        this.githubToken = savedToken;
-                    }
                 }
                 this.updateAdminUI();
                 if (this.isAdminLoggedIn()) {
@@ -2751,8 +2757,6 @@
                 // Admin toolbar elements
                 const dashboardToggle = document.getElementById('dashboardToggle');
                 const adminCreatePostBtn = document.getElementById('adminCreatePostBtn');
-                const refreshPostsBtn = document.getElementById('refreshPostsBtn');
-                const clearTokenBtn = document.getElementById('clearTokenBtn');
                 const adminLogoutBtn = document.getElementById('adminLogoutBtn');
 
 
@@ -2797,8 +2801,6 @@
                 // Admin toolbar
                 dashboardToggle.addEventListener('click', () => this.toggleDashboard());
                 adminCreatePostBtn.addEventListener('click', () => this.openModal());
-                refreshPostsBtn.addEventListener('click', () => this.refreshPostsFromGitHub());
-                clearTokenBtn.addEventListener('click', () => this.clearGitHubToken());
                 adminLogoutBtn.addEventListener('click', () => this.logout());
 
 
@@ -3076,14 +3078,7 @@
                     this.updateAdminUI();
                     this.closeAdminModal();
 
-                    // Check for existing token or prompt for new one if needed
-                    const savedToken = localStorage.getItem('githubToken');
-                    if (savedToken) {
-                        this.githubToken = savedToken;
-                        this.showSuccessMessage('Admin logged in with GitHub sync enabled!');
-                    } else {
-                        this.showSuccessMessage('Admin logged in! GitHub sync will be set up when you create your first post.');
-                    }
+                    this.showSuccessMessage('Admin logged in successfully!');
 
                     this.logSecurityEvent('LOGIN_SUCCESS', 'Admin login successful');
                 } else {
@@ -3219,14 +3214,25 @@
                         })
                     };
 
-                    this.posts.unshift(post);
-                    await this.savePosts();
+                    // Save to database first
+                    const dbSaved = await this.savePostToDatabase(post);
+
+                    if (dbSaved) {
+                        this.posts.unshift(post);
+                        // Save to localStorage as backup
+                        localStorage.setItem('blogPosts', JSON.stringify(this.posts));
+                        this.showSuccessMessage('Post created successfully!');
+                    } else {
+                        // Fallback: save locally only
+                        this.posts.unshift(post);
+                        localStorage.setItem('blogPosts', JSON.stringify(this.posts));
+                        this.showErrorMessage('Post saved locally only - database sync failed');
+                    }
+
                     this.renderPosts();
                     this.populateHistorySubtab();
                     this.closeModal();
                     this.updateAdminStats();
-
-                    this.showSuccessMessage('Post created successfully!');
                 } catch (error) {
                     this.showErrorMessage('Error creating post: ' + error.message);
                 }
@@ -3391,20 +3397,32 @@
                 }
 
                 try {
+                    // Update post data
                     this.currentEditingPost.title = title;
                     this.currentEditingPost.content = content;
                     this.currentEditingPost.century = century || null;
                     this.currentEditingPost.lastModified = new Date().toISOString();
                     this.currentEditingPost.wordCount = this.countWords(content);
 
-                    await this.savePosts();
+                    // Save to database first
+                    const dbSaved = await this.savePostToDatabase(this.currentEditingPost);
+
+                    if (dbSaved) {
+                        // Save to localStorage as backup
+                        localStorage.setItem('blogPosts', JSON.stringify(this.posts));
+                        this.showSuccessMessage('Post updated successfully!');
+                    } else {
+                        // Fallback: save locally only
+                        localStorage.setItem('blogPosts', JSON.stringify(this.posts));
+                        this.showErrorMessage('Post updated locally only - database sync failed');
+                    }
+
                     this.renderPosts();
                     this.populateHistorySubtab();
                     this.closeEditModal();
                     this.updateAdminStats();
 
                     this.logSecurityEvent('POST_EDITED', `Edited: "${title}"`);
-                    this.showSuccessMessage('Post updated successfully!');
                 } catch (error) {
                     this.showErrorMessage('Error updating post: ' + error.message);
                 }
@@ -3429,19 +3447,31 @@
 
             async deletePost(postId) {
                 try {
-                    const initialCount = this.posts.length;
-                    this.posts = this.posts.filter(p => p.id !== postId);
-
-                    if (this.posts.length === initialCount) {
+                    const postToDelete = this.posts.find(p => p.id === postId);
+                    if (!postToDelete) {
                         this.showErrorMessage('Post not found or already deleted.');
                         return;
                     }
 
-                    await this.savePosts();
+                    // Delete from database first
+                    const dbDeleted = await this.deletePostFromDatabase(postId);
+
+                    // Remove from local array
+                    this.posts = this.posts.filter(p => p.id !== postId);
+
+                    if (dbDeleted) {
+                        // Save to localStorage as backup
+                        localStorage.setItem('blogPosts', JSON.stringify(this.posts));
+                        this.showSuccessMessage('Post deleted successfully!');
+                    } else {
+                        // Fallback: save locally only
+                        localStorage.setItem('blogPosts', JSON.stringify(this.posts));
+                        this.showErrorMessage('Post deleted locally only - database sync failed');
+                    }
+
                     this.renderPosts();
                     this.populateHistorySubtab();
                     this.updateAdminStats();
-                    this.showSuccessMessage('Post deleted successfully!');
                 } catch (error) {
                     this.showErrorMessage('Error deleting post: ' + error.message);
                 }
@@ -3512,51 +3542,27 @@
                 `;
             }
 
-            // Refresh posts from GitHub (useful after conflicts)
-            async refreshPostsFromGitHub() {
-                try {
-                    this.showSaveStatus('Refreshing posts from GitHub...', false);
-                    const posts = await this.loadPosts();
-                    this.posts = posts;
-                    this.renderPosts();
-                    this.updateAdminStats();
-                    this.showSaveStatus('✅ Posts refreshed from GitHub', false);
-                    return true;
-                } catch (error) {
-                    console.error('Error refreshing posts:', error);
-                    this.showSaveStatus('❌ Failed to refresh posts', true);
-                    return false;
-                }
-            }
-
-            // GitHub API Methods
+            // Supabase Database Methods
             async loadPosts() {
                 try {
-                    const url = `https://api.github.com/repos/${this.githubConfig.owner}/${this.githubConfig.repo}/contents/${this.githubConfig.path}`;
-                    const response = await fetch(url);
+                    this.showSaveStatus('Loading posts...', false);
+                    const { data, error } = await this.supabase
+                        .from('posts')
+                        .select('*')
+                        .order('created_at', { ascending: false });
 
-                    if (!response.ok) {
-                        if (response.status === 404) {
-                            // File doesn't exist yet, return empty array
-                            return [];
-                        }
-                        throw new Error(`GitHub API error: ${response.status}`);
+                    if (error) {
+                        throw error;
                     }
 
-                    const data = await response.json();
-                    const content = atob(data.content);
-                    const posts = JSON.parse(content);
-
-                    // Store the current file SHA for subsequent operations
-                    this.currentFileSHA = data.sha;
-                    console.log('Posts loaded, SHA stored:', this.currentFileSHA);
-
                     // Also save to localStorage as backup
-                    localStorage.setItem('blogPosts', JSON.stringify(posts));
+                    localStorage.setItem('blogPosts', JSON.stringify(data));
 
-                    return posts;
+                    console.log('Posts loaded from Supabase:', data.length);
+                    return data || [];
+
                 } catch (error) {
-                    console.error('Error loading posts from GitHub:', error);
+                    console.error('Error loading posts from Supabase:', error);
                     // Fallback to localStorage
                     return this.loadPostsFromLocalStorage();
                 }
@@ -3569,93 +3575,6 @@
                 } catch (error) {
                     console.error('Error loading posts from localStorage:', error);
                     return [];
-                }
-            }
-
-            // GitHub Token Management
-            async validateGitHubToken(token) {
-                if (!token) return false;
-
-                try {
-                    // Test token with a simple API call
-                    const response = await fetch('https://api.github.com/user', {
-                        headers: {
-                            'Authorization': `token ${token}`,
-                        }
-                    });
-                    return response.ok;
-                } catch (error) {
-                    console.error('Token validation error:', error);
-                    return false;
-                }
-            }
-
-            async promptForGitHubToken(reason = '') {
-                const message = reason ?
-                    `${reason}\n\nPlease enter a new GitHub Personal Access Token:` :
-                    'To enable cross-device synchronization, please enter your GitHub Personal Access Token:';
-
-                const fullPrompt = `${message}\n\n` +
-                    '1. Go to GitHub Settings > Developer Settings > Personal Access Tokens > Tokens (classic)\n' +
-                    '2. Generate new token with "repo" permissions\n' +
-                    '3. Copy and paste the token here\n\n' +
-                    'Leave empty to use local storage only:';
-
-                return prompt(fullPrompt);
-            }
-
-            async ensureValidGitHubToken() {
-                // First check if we have a saved token
-                let token = localStorage.getItem('githubToken');
-
-                if (token && await this.validateGitHubToken(token)) {
-                    this.githubToken = token;
-                    return true;
-                }
-
-                // Token is invalid or doesn't exist, prompt for new one
-                const reason = token ? 'Your saved GitHub token has expired or is invalid.' : '';
-                const newToken = await this.promptForGitHubToken(reason);
-
-                if (newToken && newToken.trim()) {
-                    const trimmedToken = newToken.trim();
-                    if (await this.validateGitHubToken(trimmedToken)) {
-                        this.githubToken = trimmedToken;
-                        localStorage.setItem('githubToken', trimmedToken);
-                        return true;
-                    } else {
-                        alert('Invalid GitHub token. Posts will be saved locally only.');
-                        return false;
-                    }
-                }
-
-                return false;
-            }
-
-            clearGitHubToken() {
-                this.githubToken = null;
-                localStorage.removeItem('githubToken');
-                this.showSuccessMessage('GitHub token cleared. You will be prompted for a new token on next post save.');
-            }
-
-            // GitHub API Helpers with Robust Conflict Resolution
-            async fetchCurrentFileSHA() {
-                const url = `https://api.github.com/repos/${this.githubConfig.owner}/${this.githubConfig.repo}/contents/${this.githubConfig.path}`;
-
-                try {
-                    const response = await fetch(url);
-                    if (response.ok) {
-                        const data = await response.json();
-                        return data.sha;
-                    } else if (response.status === 404) {
-                        // File doesn't exist yet
-                        return null;
-                    } else {
-                        throw new Error(`Failed to fetch file info: ${response.status}`);
-                    }
-                } catch (error) {
-                    console.error('Error fetching file SHA:', error);
-                    return null;
                 }
             }
 
@@ -3701,122 +3620,81 @@
 
             async savePosts() {
                 // Show loading state
-                this.showSaveStatus('Saving to GitHub...', false);
+                this.showSaveStatus('Saving posts...', false);
 
                 try {
-                    // Ensure we have a valid GitHub token, prompt if needed
-                    if (!await this.ensureValidGitHubToken()) {
-                        // No token available, fall back to localStorage
-                        throw new Error('GitHub sync not available. Saving locally only.');
+                    // Save all posts to Supabase - we'll implement upsert logic
+                    for (const post of this.posts) {
+                        const { error } = await this.supabase
+                            .from('posts')
+                            .upsert({
+                                id: post.id,
+                                title: post.title,
+                                content: post.content,
+                                created_at: post.timestamp,
+                                updated_at: new Date().toISOString()
+                            });
+
+                        if (error) {
+                            throw error;
+                        }
                     }
 
-                    // Try saving with retry logic for 409 conflicts
-                    const success = await this.saveToGitHubWithRetry(3); // Max 3 attempts
-
-                    if (success) {
-                        // Also save to localStorage as backup
-                        localStorage.setItem('blogPosts', JSON.stringify(this.posts));
-                        this.showSaveStatus('✅ Saved to GitHub successfully!', false);
-                    } else {
-                        throw new Error('Failed to save after multiple attempts');
-                    }
+                    // Also save to localStorage as backup
+                    localStorage.setItem('blogPosts', JSON.stringify(this.posts));
+                    this.showSaveStatus('✅ Saved successfully!', false);
 
                 } catch (error) {
-                    console.error('Error saving posts to GitHub:', error);
+                    console.error('Error saving posts to Supabase:', error);
                     // Fallback to localStorage only
                     try {
                         localStorage.setItem('blogPosts', JSON.stringify(this.posts));
-                        this.showSaveStatus('⚠️ Saved locally only - GitHub sync failed', true);
+                        this.showSaveStatus('⚠️ Saved locally only - Database sync failed', true);
                     } catch (fallbackError) {
                         this.showSaveStatus('❌ Save failed completely', true);
                     }
                 }
             }
 
-            async saveToGitHubWithRetry(maxAttempts = 3) {
-                const url = `https://api.github.com/repos/${this.githubConfig.owner}/${this.githubConfig.repo}/contents/${this.githubConfig.path}`;
+            // Individual Supabase Post Operations
+            async savePostToDatabase(post) {
+                try {
+                    const { data, error } = await this.supabase
+                        .from('posts')
+                        .upsert({
+                            id: post.id,
+                            title: post.title,
+                            content: post.content,
+                            created_at: post.timestamp,
+                            updated_at: new Date().toISOString()
+                        })
+                        .select();
 
-                for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-                    try {
-                        // ALWAYS fetch fresh SHA before each operation to prevent 409 conflicts
-                        console.log(`Attempt ${attempt}: Fetching fresh SHA from GitHub...`);
-                        const sha = await this.fetchCurrentFileSHA();
-                        this.currentFileSHA = sha; // Keep our stored SHA in sync
-                        console.log('Current GitHub SHA:', sha);
+                    if (error) throw error;
 
-                        if (attempt > 1) {
-                            this.showSaveStatus(`Resolving conflict... (attempt ${attempt})`, false);
-                        }
-
-                        // Prepare the content
-                        const content = btoa(JSON.stringify(this.posts, null, 2));
-
-                        const requestBody = {
-                            message: `Update blog posts - ${new Date().toISOString()}`,
-                            content: content,
-                            branch: this.githubConfig.branch
-                        };
-
-                        if (sha) {
-                            requestBody.sha = sha;
-                        }
-
-                        const response = await fetch(url, {
-                            method: 'PUT',
-                            headers: {
-                                'Authorization': `token ${this.githubToken}`,
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify(requestBody)
-                        });
-
-                        if (response.ok) {
-                            // SUCCESS! Update our stored SHA with the new one from GitHub
-                            const responseData = await response.json();
-                            this.currentFileSHA = responseData.content.sha;
-                            console.log('Save successful, updated SHA to:', this.currentFileSHA);
-                            return true;
-                        }
-
-                        const errorData = await response.json();
-
-                        if (response.status === 409) {
-                            // Conflict - the file was modified by someone else
-                            console.log(`Attempt ${attempt}: 409 conflict detected, retrying with fresh SHA...`);
-
-                            if (attempt === maxAttempts) {
-                                // Final attempt failed
-                                this.showSaveStatus('❌ Conflict detected - please refresh and try again', true);
-                                return false;
-                            }
-
-                            // Wait a bit before retrying
-                            await new Promise(resolve => setTimeout(resolve, 500));
-                            continue;
-                        }
-
-                        if (response.status === 422) {
-                            // Validation failed - might be a SHA mismatch
-                            console.log(`Attempt ${attempt}: Validation error, retrying...`);
-                            if (attempt < maxAttempts) {
-                                await new Promise(resolve => setTimeout(resolve, 500));
-                                continue;
-                            }
-                        }
-
-                        // Other errors - don't retry
-                        throw new Error(`GitHub API error: ${response.status} - ${errorData.message || 'Unknown error'}`);
-
-                    } catch (error) {
-                        if (attempt === maxAttempts) {
-                            throw error;
-                        }
-                        console.log(`Attempt ${attempt} failed:`, error.message);
-                        await new Promise(resolve => setTimeout(resolve, 500));
-                    }
+                    console.log('Post saved to database:', data);
+                    return true;
+                } catch (error) {
+                    console.error('Error saving post to database:', error);
+                    return false;
                 }
+            }
 
-                return false;
+            async deletePostFromDatabase(postId) {
+                try {
+                    const { error } = await this.supabase
+                        .from('posts')
+                        .delete()
+                        .eq('id', postId);
+
+                    if (error) throw error;
+
+                    console.log('Post deleted from database:', postId);
+                    return true;
+                } catch (error) {
+                    console.error('Error deleting post from database:', error);
+                    return false;
+                }
             }
 
             // Export/Import Methods
@@ -3886,7 +3764,8 @@
 
                 sessionStorage.removeItem('adminLoggedIn');
                 localStorage.removeItem('adminPersistent');
-                // Keep GitHub token in localStorage for persistence across sessions
+                // Clear any old GitHub tokens from localStorage
+                localStorage.removeItem('githubToken');
                 this.clearTimers();
                 this.hideTimeoutWarning();
                 if (this.sessionDurationInterval) {
