@@ -2374,8 +2374,21 @@
             async migratePostData() {
                 let needsSave = false;
                 this.posts.forEach(post => {
+                    // Map database fields to JavaScript object properties for consistency
+                    // Map created_at to timestamp (Supabase uses created_at)
+                    if (!post.timestamp && post.created_at) {
+                        post.timestamp = post.created_at;
+                        needsSave = true;
+                    }
+
+                    // Map word_count to wordCount (Supabase uses word_count)
+                    if (!post.wordCount && post.word_count) {
+                        post.wordCount = post.word_count;
+                        needsSave = true;
+                    }
+
                     if (!post.lastModified) {
-                        post.lastModified = post.timestamp || new Date().toISOString();
+                        post.lastModified = post.timestamp || post.created_at || new Date().toISOString();
                         needsSave = true;
                     }
                     if (!post.wordCount) {
@@ -2387,13 +2400,14 @@
                         needsSave = true;
                     }
                     // Ensure all posts have a proper dateString generated from timestamp
-                    if (!post.dateString && post.timestamp) {
-                        post.dateString = this.formatDate(new Date(post.timestamp));
+                    const dateSource = post.timestamp || post.created_at;
+                    if (!post.dateString && dateSource) {
+                        post.dateString = this.formatDate(new Date(dateSource));
                         needsSave = true;
                     }
                     // Fix any invalid dateString that might exist
                     if (post.dateString && post.dateString.includes('Invalid')) {
-                        post.dateString = this.formatDate(new Date(post.timestamp || post.created_at));
+                        post.dateString = this.formatDate(new Date(dateSource));
                         needsSave = true;
                     }
                 });
@@ -4089,6 +4103,7 @@
                     const now = new Date();
                     const publishTimestamp = now.toISOString();
                     const dateString = this.formatDate(now);
+                    const wordCount = await this.getDraftWordCount(draftId);
 
                     const { error } = await this.supabase
                         .from('posts')
@@ -4096,8 +4111,7 @@
                             is_draft: false,
                             created_at: publishTimestamp,
                             updated_at: publishTimestamp,
-                            timestamp: publishTimestamp,
-                            dateString: dateString
+                            word_count: wordCount
                         })
                         .eq('id', draftId);
 
@@ -4112,6 +4126,22 @@
                 } catch (error) {
                     console.error('Error publishing draft:', error);
                     this.showErrorMessage('Error publishing draft: ' + error.message);
+                }
+            }
+
+            async getDraftWordCount(draftId) {
+                try {
+                    const { data, error } = await this.supabase
+                        .from('posts')
+                        .select('content')
+                        .eq('id', draftId)
+                        .single();
+
+                    if (error) throw error;
+                    return this.countWords(data.content || '');
+                } catch (error) {
+                    console.error('Error getting draft word count:', error);
+                    return 0;
                 }
             }
 
