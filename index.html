@@ -2036,12 +2036,11 @@
     <script>
         class BlogApp {
             constructor() {
-                this.posts = this.loadPosts();
+                this.posts = [];
 
                 // Security Configuration
                 this.securityConfig = {
-                    enableIPRestriction: false, // Set to true to enable IP whitelist
-                    allowedIPs: ['127.0.0.1', 'localhost'], // Add your IPs here
+                    enableIPRestriction: false, // IP restrictions disabled for cross-device access
                     maxLoginAttempts: 3,
                     lockoutDuration: 15 * 60 * 1000, // 15 minutes
                     sessionTokens: new Set(),
@@ -2064,55 +2063,41 @@
                 this.sessionDurationInterval = null;
                 this.currentEditingPost = null;
                 this.pendingConfirmAction = null;
-                this.currentIP = null;
                 this.sessionToken = null;
                 this.lockoutTimer = null;
 
                 this.initSecuritySystems();
                 this.initEventListeners();
-                this.migratePostData();
-                this.renderPosts();
                 this.checkExistingSession();
                 this.initActivityTracking();
                 this.initSecurityFeatures();
                 this.populateCenturyDropdowns();
                 this.initDiscourseSubtabs();
                 this.setUserMode();
+
+                // Initialize posts asynchronously
+                this.initializePosts();
+            }
+
+            async initializePosts() {
+                try {
+                    this.posts = await this.loadPosts();
+                    await this.migratePostData();
+                    this.renderPosts();
+                    this.updateAdminStats();
+                } catch (error) {
+                    console.error('Error initializing posts:', error);
+                    this.showErrorMessage('Failed to load posts. Please refresh the page.');
+                }
             }
 
             // Enhanced Security Methods
             initSecuritySystems() {
-                this.detectCurrentIP();
-                this.checkIPRestrictions();
                 this.initRateLimiting();
                 this.fakeSecurityCheck1(); // Dummy security check
-                this.generateSessionFingerprint();
             }
 
-            detectCurrentIP() {
-                // Multiple IP detection methods for redundancy
-                fetch('https://api.ipify.org?format=json')
-                    .then(response => response.json())
-                    .then(data => {
-                        this.currentIP = data.ip;
-                        this.updateSecurityIndicator();
-                    })
-                    .catch(() => {
-                        // Fallback IP detection
-                        this.currentIP = 'Unknown';
-                    });
-            }
-
-            checkIPRestrictions() {
-                if (!this.securityConfig.enableIPRestriction) return true;
-
-                if (this.currentIP && !this.securityConfig.allowedIPs.includes(this.currentIP)) {
-                    this.logSecurityEvent('IP_RESTRICTED', `Blocked IP: ${this.currentIP}`);
-                    document.getElementById('footerAdminLink').style.display = 'none';
-                    return false;
-                }
-                return true;
-            }
+            // IP restrictions removed for cross-device compatibility
 
             createSecureHash(input) {
                 // Multi-layer obfuscation
@@ -2135,15 +2120,7 @@
                 return btoa('securesalt').slice(0, 16); // Fixed salt instead of dynamic
             }
 
-            generateSessionFingerprint() {
-                const fingerprint = btoa(
-                    navigator.userAgent +
-                    screen.width + screen.height +
-                    navigator.language +
-                    Date.now()
-                ).slice(0, 32);
-                return fingerprint;
-            }
+            // Device fingerprinting removed for cross-device compatibility
 
             fakeSecurityCheck1() {
                 // Dummy security check to confuse inspection
@@ -2157,7 +2134,7 @@
                 return localStorage.getItem('system_token') !== null;
             }
 
-            migratePostData() {
+            async migratePostData() {
                 let needsSave = false;
                 this.posts.forEach(post => {
                     if (!post.lastModified) {
@@ -2174,7 +2151,7 @@
                     }
                 });
                 if (needsSave) {
-                    this.savePosts();
+                    await this.savePosts();
                 }
             }
 
@@ -2519,7 +2496,6 @@
                 const token = btoa(
                     Date.now() +
                     Math.random() +
-                    this.currentIP +
                     navigator.userAgent
                 ).replace(/[+=]/g, '');
 
@@ -3094,7 +3070,7 @@
                     timestamp: new Date().toISOString(),
                     action: action,
                     details: details,
-                    ip: this.currentIP || 'Unknown',
+                    ip: 'Cross-device access',
                     userAgent: navigator.userAgent.substring(0, 50) + '...'
                 };
 
@@ -3121,18 +3097,13 @@
 
 
 
-            updateSecurityIndicator() {
-                const indicator = document.getElementById('securityIndicator');
-                if (this.securityConfig.enableIPRestriction && this.currentIP) {
-                    indicator.classList.add('active');
-                }
-            }
+            // Security indicator removed for cross-device compatibility
 
 
 
 
 
-            editPost(postId) {
+            async editPost(postId) {
                 const post = this.posts.find(p => p.id === postId);
                 if (!post) return;
 
@@ -3145,14 +3116,14 @@
                 if (newTitle.trim() && newContent.trim()) {
                     post.title = newTitle.trim();
                     post.content = newContent.trim();
-                    this.savePosts();
+                    await this.savePosts();
                     this.renderPosts();
                     this.updateAdminStats();
                     this.showSuccessMessage('Post updated successfully!');
                 }
             }
 
-            deletePost(postId) {
+            async deletePost(postId) {
                 if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
                     return;
                 }
@@ -3177,7 +3148,7 @@
                 this.showSuccessMessage('Successfully logged out!');
             }
 
-            handleSubmit(e) {
+            async handleSubmit(e) {
                 e.preventDefault();
 
                 if (!this.isAdminLoggedIn()) {
@@ -3215,7 +3186,7 @@
                     };
 
                     this.posts.unshift(post);
-                    this.savePosts();
+                    await this.savePosts();
                     this.renderPosts();
                     this.populateHistorySubtab();
                     this.closeModal();
@@ -3368,7 +3339,7 @@
                 }
             }
 
-            handleEditPost(e) {
+            async handleEditPost(e) {
                 e.preventDefault();
 
                 if (!this.currentEditingPost) {
@@ -3392,7 +3363,7 @@
                     this.currentEditingPost.lastModified = new Date().toISOString();
                     this.currentEditingPost.wordCount = this.countWords(content);
 
-                    this.savePosts();
+                    await this.savePosts();
                     this.renderPosts();
                     this.populateHistorySubtab();
                     this.closeEditModal();
@@ -3422,7 +3393,7 @@
                 );
             }
 
-            deletePost(postId) {
+            async deletePost(postId) {
                 try {
                     const initialCount = this.posts.length;
                     this.posts = this.posts.filter(p => p.id !== postId);
@@ -3432,7 +3403,7 @@
                         return;
                     }
 
-                    this.savePosts();
+                    await this.savePosts();
                     this.renderPosts();
                     this.populateHistorySubtab();
                     this.updateAdminStats();
@@ -3507,23 +3478,50 @@
                 `;
             }
 
-            loadPosts() {
+            async loadPosts() {
                 try {
-                    const stored = localStorage.getItem('blogPosts');
-                    return stored ? JSON.parse(stored) : [];
+                    const response = await fetch('/api/posts');
+                    if (!response.ok) {
+                        throw new Error('Failed to load posts from server');
+                    }
+                    const posts = await response.json();
+                    return posts;
                 } catch (error) {
                     console.error('Error loading posts:', error);
-                    this.showErrorMessage('Error loading posts from storage.');
-                    return [];
+                    this.showErrorMessage('Error loading posts from server. Using local fallback.');
+                    // Fallback to localStorage for backward compatibility
+                    try {
+                        const stored = localStorage.getItem('blogPosts');
+                        return stored ? JSON.parse(stored) : [];
+                    } catch (fallbackError) {
+                        return [];
+                    }
                 }
             }
 
-            savePosts() {
+            async savePosts() {
                 try {
+                    const response = await fetch('/api/posts', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(this.posts)
+                    });
+                    if (!response.ok) {
+                        throw new Error('Failed to save posts to server');
+                    }
+                    // Also save to localStorage as backup
                     localStorage.setItem('blogPosts', JSON.stringify(this.posts));
                 } catch (error) {
                     console.error('Error saving posts:', error);
-                    alert('Error saving posts. Please try again.');
+                    // Fallback to localStorage
+                    try {
+                        localStorage.setItem('blogPosts', JSON.stringify(this.posts));
+                        this.showErrorMessage('Posts saved locally only. Server connection failed.');
+                    } catch (fallbackError) {
+                        alert('Error saving posts. Please try again.');
+                    }
                 }
             }
 
