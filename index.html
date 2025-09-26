@@ -4242,8 +4242,10 @@
                                 id: post.id,
                                 title: post.title,
                                 content: post.content,
+                                century: post.century,
                                 created_at: post.timestamp,
                                 updated_at: new Date().toISOString(),
+                                word_count: post.wordCount,
                                 is_draft: false
                             });
 
@@ -4277,8 +4279,10 @@
                             id: post.id,
                             title: post.title,
                             content: post.content,
+                            century: post.century,
                             created_at: post.timestamp,
                             updated_at: new Date().toISOString(),
+                            word_count: post.wordCount,
                             is_draft: false
                         })
                         .select();
