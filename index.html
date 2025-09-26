@@ -2036,6 +2036,15 @@
     <script>
         class BlogApp {
             constructor() {
+                // GitHub API Configuration
+                this.githubConfig = {
+                    owner: 'danefroelicher2',  // Your GitHub username
+                    repo: 'my-blog',           // Your repository name
+                    path: 'data/posts.json',  // Path to posts file
+                    branch: 'main'             // Branch name
+                };
+
+                this.githubToken = null;  // Will be set when admin logs in
                 this.posts = [];
 
                 // Security Configuration
@@ -2075,7 +2084,7 @@
                 this.initDiscourseSubtabs();
                 this.setUserMode();
 
-                // Initialize posts asynchronously
+                // Load posts from GitHub
                 this.initializePosts();
             }
 
@@ -2086,8 +2095,12 @@
                     this.renderPosts();
                     this.updateAdminStats();
                 } catch (error) {
-                    console.error('Error initializing posts:', error);
-                    this.showErrorMessage('Failed to load posts. Please refresh the page.');
+                    console.error('Error loading posts from GitHub:', error);
+                    this.showErrorMessage('Failed to load posts. Using offline mode.');
+                    // Fallback to localStorage for offline support
+                    this.posts = this.loadPostsFromLocalStorage();
+                    this.renderPosts();
+                    this.updateAdminStats();
                 }
             }
 
@@ -2552,6 +2565,13 @@
             checkExistingSession() {
                 if (localStorage.getItem('adminPersistent') !== 'true') {
                     sessionStorage.removeItem('adminLoggedIn');
+                    sessionStorage.removeItem('githubToken');
+                } else {
+                    // Restore GitHub token if admin session is persistent
+                    const savedToken = sessionStorage.getItem('githubToken');
+                    if (savedToken) {
+                        this.githubToken = savedToken;
+                    }
                 }
                 this.updateAdminUI();
                 if (this.isAdminLoggedIn()) {
@@ -3042,6 +3062,23 @@
                 if (password === 'Pacers33!!!') {
                     if (!this.recordLoginAttempt(true)) return;
 
+                    // Prompt for GitHub token for cross-device sync
+                    const githubToken = prompt(
+                        'To enable cross-device synchronization, please enter your GitHub Personal Access Token:\n\n' +
+                        '1. Go to GitHub Settings > Developer Settings > Personal Access Tokens > Tokens (classic)\n' +
+                        '2. Generate new token with "repo" permissions\n' +
+                        '3. Copy and paste the token here\n\n' +
+                        'Leave empty to use local storage only:'
+                    );
+
+                    if (githubToken && githubToken.trim()) {
+                        this.githubToken = githubToken.trim();
+                        sessionStorage.setItem('githubToken', this.githubToken);
+                        this.showSuccessMessage('Admin logged in with GitHub sync enabled!');
+                    } else {
+                        this.showSuccessMessage('Admin logged in with local storage only.');
+                    }
+
                     sessionStorage.setItem('adminLoggedIn', 'true');
                     localStorage.setItem('adminPersistent', 'true');
 
@@ -3051,7 +3088,6 @@
                     this.closeAdminModal();
 
                     this.logSecurityEvent('LOGIN_SUCCESS', 'Admin login successful');
-                    this.showSuccessMessage('Successfully logged in as admin!');
                 } else {
                     if (!this.recordLoginAttempt(false)) return;
 
@@ -3478,49 +3514,104 @@
                 `;
             }
 
+            // GitHub API Methods
             async loadPosts() {
                 try {
-                    const response = await fetch('/api/posts');
+                    const url = `https://api.github.com/repos/${this.githubConfig.owner}/${this.githubConfig.repo}/contents/${this.githubConfig.path}`;
+                    const response = await fetch(url);
+
                     if (!response.ok) {
-                        throw new Error('Failed to load posts from server');
+                        if (response.status === 404) {
+                            // File doesn't exist yet, return empty array
+                            return [];
+                        }
+                        throw new Error(`GitHub API error: ${response.status}`);
                     }
-                    const posts = await response.json();
+
+                    const data = await response.json();
+                    const content = atob(data.content);
+                    const posts = JSON.parse(content);
+
+                    // Also save to localStorage as backup
+                    localStorage.setItem('blogPosts', JSON.stringify(posts));
+
                     return posts;
                 } catch (error) {
-                    console.error('Error loading posts:', error);
-                    this.showErrorMessage('Error loading posts from server. Using local fallback.');
-                    // Fallback to localStorage for backward compatibility
-                    try {
-                        const stored = localStorage.getItem('blogPosts');
-                        return stored ? JSON.parse(stored) : [];
-                    } catch (fallbackError) {
-                        return [];
-                    }
+                    console.error('Error loading posts from GitHub:', error);
+                    // Fallback to localStorage
+                    return this.loadPostsFromLocalStorage();
+                }
+            }
+
+            loadPostsFromLocalStorage() {
+                try {
+                    const stored = localStorage.getItem('blogPosts');
+                    return stored ? JSON.parse(stored) : [];
+                } catch (error) {
+                    console.error('Error loading posts from localStorage:', error);
+                    return [];
                 }
             }
 
             async savePosts() {
                 try {
-                    const response = await fetch('/api/posts', {
-                        method: 'POST',
+                    if (!this.githubToken) {
+                        throw new Error('GitHub token not available. Please log in as admin.');
+                    }
+
+                    const url = `https://api.github.com/repos/${this.githubConfig.owner}/${this.githubConfig.repo}/contents/${this.githubConfig.path}`;
+
+                    // First, get the current file to get its SHA
+                    let sha = null;
+                    try {
+                        const currentResponse = await fetch(url);
+                        if (currentResponse.ok) {
+                            const currentData = await currentResponse.json();
+                            sha = currentData.sha;
+                        }
+                    } catch (error) {
+                        // File might not exist yet, that's OK
+                    }
+
+                    // Prepare the content
+                    const content = btoa(JSON.stringify(this.posts, null, 2));
+
+                    const requestBody = {
+                        message: `Update blog posts - ${new Date().toISOString()}`,
+                        content: content,
+                        branch: this.githubConfig.branch
+                    };
+
+                    if (sha) {
+                        requestBody.sha = sha;
+                    }
+
+                    const response = await fetch(url, {
+                        method: 'PUT',
                         headers: {
+                            'Authorization': `token ${this.githubToken}`,
                             'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify(this.posts)
+                        body: JSON.stringify(requestBody)
                     });
+
                     if (!response.ok) {
-                        throw new Error('Failed to save posts to server');
+                        const errorData = await response.json();
+                        throw new Error(`GitHub API error: ${response.status} - ${errorData.message}`);
                     }
+
                     // Also save to localStorage as backup
                     localStorage.setItem('blogPosts', JSON.stringify(this.posts));
+
+                    this.showSuccessMessage('Posts saved to GitHub successfully!');
                 } catch (error) {
-                    console.error('Error saving posts:', error);
-                    // Fallback to localStorage
+                    console.error('Error saving posts to GitHub:', error);
+                    // Fallback to localStorage only
                     try {
                         localStorage.setItem('blogPosts', JSON.stringify(this.posts));
-                        this.showErrorMessage('Posts saved locally only. Server connection failed.');
+                        this.showErrorMessage('Saved locally only. GitHub sync failed: ' + error.message);
                     } catch (fallbackError) {
-                        alert('Error saving posts. Please try again.');
+                        alert('Error saving posts: ' + error.message);
                     }
                 }
             }
@@ -3592,6 +3683,8 @@
 
                 sessionStorage.removeItem('adminLoggedIn');
                 localStorage.removeItem('adminPersistent');
+                sessionStorage.removeItem('githubToken');
+                this.githubToken = null;
                 this.clearTimers();
                 this.hideTimeoutWarning();
                 if (this.sessionDurationInterval) {
