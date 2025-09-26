@@ -2145,9 +2145,9 @@
                     <input type="text" id="postTitle" required placeholder="Enter your post title...">
                 </div>
                 <div class="form-group">
-                    <label for="postCentury">Century (optional)</label>
+                    <label for="postCentury">Time Period (optional)</label>
                     <select id="postCentury">
-                        <option value="">Select a century (optional)</option>
+                        <option value="">Select a time period (optional)</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -2203,9 +2203,9 @@
                     <input type="text" id="editPostTitle" required placeholder="Enter post title...">
                 </div>
                 <div class="form-group">
-                    <label for="editPostCentury">Century (optional)</label>
+                    <label for="editPostCentury">Time Period (optional)</label>
                     <select id="editPostCentury">
-                        <option value="">Select a century (optional)</option>
+                        <option value="">Select a time period (optional)</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -2403,12 +2403,12 @@
 
                 dropdowns.forEach(dropdown => {
                     if (dropdown) {
-                        // Keep the default "Select a century" option
+                        // Keep the default "Select a time period" option
                         const defaultOption = dropdown.querySelector('option[value=""]');
                         dropdown.innerHTML = '';
                         dropdown.appendChild(defaultOption);
 
-                        // Add all century options
+                        // Add all time period options
                         centuryOptions.forEach(century => {
                             const option = document.createElement('option');
                             option.value = century.value;
@@ -2478,9 +2478,10 @@
             }
 
             generateCenturyOptions() {
+                // Only return historical time periods for the dropdown
+                // Discourse categories are used elsewhere in the app
                 const timePeriods = this.generateTimePeriods();
-                const discourseCategories = this.generateDiscourseCategories();
-                return [...timePeriods, ...discourseCategories];
+                return timePeriods;
             }
 
             populateHistorySubtab() {
@@ -2750,9 +2751,18 @@
             }
 
             getTimePeriodDisplayName(timePeriodValue) {
-                const timePeriods = this.generateCenturyOptions();
-                const period = timePeriods.find(p => p.value === timePeriodValue);
-                return period ? period.display : timePeriodValue;
+                // First check time periods
+                const timePeriods = this.generateTimePeriods();
+                const timePeriod = timePeriods.find(p => p.value === timePeriodValue);
+                if (timePeriod) return timePeriod.display;
+
+                // Then check discourse categories for existing posts
+                const discourseCategories = this.generateDiscourseCategories();
+                const discourseCategory = discourseCategories.find(p => p.value === timePeriodValue);
+                if (discourseCategory) return discourseCategory.display;
+
+                // Fallback to the original value
+                return timePeriodValue;
             }
 
             // Rate Limiting System
@@ -2986,12 +2996,13 @@
                     return false;
                 });
 
-                setInterval(() => {
-                    if (this.isAdminLoggedIn() && this.isDevToolsOpen()) {
-                        this.showSuccessMessage('Developer tools detected. Logging out for security.');
-                        this.logout();
-                    }
-                }, 1000);
+                // Disabled aggressive dev tools detection that was causing false logouts
+                // setInterval(() => {
+                //     if (this.isAdminLoggedIn() && this.isDevToolsOpen()) {
+                //         this.showSuccessMessage('Developer tools detected. Logging out for security.');
+                //         this.logout();
+                //     }
+                // }, 1000);
             }
 
             isDevToolsOpen() {
@@ -4376,32 +4387,7 @@
 
 
 
-            // Enhanced logout with security logging
-            logout() {
-                this.logSecurityEvent('ADMIN_LOGOUT', 'Admin session ended');
-
-                sessionStorage.removeItem('adminLoggedIn');
-                localStorage.removeItem('adminPersistent');
-                // Clear any old GitHub tokens from localStorage
-                localStorage.removeItem('githubToken');
-                this.clearTimers();
-                this.hideTimeoutWarning();
-                if (this.sessionDurationInterval) {
-                    clearInterval(this.sessionDurationInterval);
-                }
-                if (this.lockoutTimer) {
-                    clearInterval(this.lockoutTimer);
-                }
-
-                // Clear session security
-                this.securityConfig.sessionTokens.clear();
-                sessionStorage.removeItem('adminSessionToken');
-
-                this.adminLoginTime = null;
-                this.sessionToken = null;
-                this.updateAdminUI();
-                this.showSuccessMessage('Successfully logged out!');
-            }
+            // Duplicate logout function removed to prevent conflicts
         }
 
         let app;
