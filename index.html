@@ -1022,6 +1022,85 @@
             background: #dc2626;
         }
 
+        /* Discourse Post Styles (reuse timeline styles for consistency) */
+        .discourse-post-item {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            margin-bottom: 8px;
+        }
+
+        .discourse-post-item:hover {
+            background: var(--bg-secondary);
+            border-color: var(--accent);
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .discourse-post-title {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 500;
+            line-height: 1.4;
+            margin: 0;
+            display: block;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+
+        .discourse-post-title:hover {
+            color: var(--accent);
+        }
+
+        .discourse-post-meta {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .discourse-post-date {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .discourse-post-words {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .discourse-post-actions {
+            display: none;
+            margin-top: 8px;
+            gap: 8px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .discourse-post-item:hover .discourse-post-actions {
+            display: flex;
+            opacity: 1;
+        }
+
+        .discourse-posts {
+            padding: 16px 0;
+        }
+
+        .discourse-posts h4 {
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            font-size: 1.2rem;
+        }
+
         /* Discourses Container Styles */
         .discourses-container {
             max-width: 100%;
@@ -1878,6 +1957,7 @@
                         <button class="subtab-btn" data-subtab="literature">Literature</button>
                         <button class="subtab-btn" data-subtab="science">Science</button>
                         <button class="subtab-btn" data-subtab="technology">Technology</button>
+                        <button class="subtab-btn" data-subtab="religion">Religion</button>
                     </div>
 
                     <!-- Subtab Content -->
@@ -1917,6 +1997,14 @@
                         <div id="technologySubtab" class="subtab-pane">
                             <div class="subtab-placeholder">
                                 <h4>Technology</h4>
+                                <p>Coming soon</p>
+                            </div>
+                        </div>
+
+                        <!-- Religion Subtab -->
+                        <div id="religionSubtab" class="subtab-pane">
+                            <div class="subtab-placeholder">
+                                <h4>Religion</h4>
                                 <p>Coming soon</p>
                             </div>
                         </div>
@@ -2240,7 +2328,35 @@
                     }
                 ];
 
-                return timePeriods;
+                // Add discourse categories
+                const discourseCategories = [
+                    {
+                        value: 'history',
+                        display: 'History'
+                    },
+                    {
+                        value: 'philosophy',
+                        display: 'Philosophy'
+                    },
+                    {
+                        value: 'literature',
+                        display: 'Literature'
+                    },
+                    {
+                        value: 'science',
+                        display: 'Science'
+                    },
+                    {
+                        value: 'technology',
+                        display: 'Technology'
+                    },
+                    {
+                        value: 'religion',
+                        display: 'Religion'
+                    }
+                ];
+
+                return [...timePeriods, ...discourseCategories];
             }
 
             populateHistorySubtab() {
@@ -2280,6 +2396,69 @@
                 return this.posts
                     .filter(post => post.century === timePeriodValue)
                     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            }
+
+            getPostsByCategory(category) {
+                return this.posts
+                    .filter(post => post.century === category)
+                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            }
+
+            populateDiscourseSubtab(subtabName) {
+                try {
+                    const subtabContainer = document.getElementById(`${subtabName}Subtab`);
+                    if (!subtabContainer) {
+                        console.warn(`Subtab container for ${subtabName} not found`);
+                        return;
+                    }
+
+                    // Get posts for this category
+                    const categoryPosts = this.getPostsByCategory(subtabName);
+
+                    if (categoryPosts.length === 0) {
+                        // Show placeholder if no posts
+                        subtabContainer.innerHTML = `
+                            <div class="subtab-placeholder">
+                                <h4>${subtabName.charAt(0).toUpperCase() + subtabName.slice(1)}</h4>
+                                <p>No posts in this category yet. ${this.isAdminLoggedIn() ? 'Create a post and categorize it as "' + subtabName.charAt(0).toUpperCase() + subtabName.slice(1) + '" to see it here.' : 'Check back later for posts in this category.'}</p>
+                            </div>
+                        `;
+                    } else {
+                        // Show posts
+                        subtabContainer.innerHTML = `
+                            <div class="discourse-posts">
+                                <h4>${subtabName.charAt(0).toUpperCase() + subtabName.slice(1)} Posts</h4>
+                                ${this.renderDiscoursePostList(categoryPosts)}
+                            </div>
+                        `;
+                    }
+                } catch (error) {
+                    console.error(`Error populating ${subtabName} subtab:`, error);
+                }
+            }
+
+            renderDiscoursePostList(posts) {
+                return posts.map(post => `
+                    <div class="discourse-post-item">
+                        <div class="discourse-post-title" onclick="app.viewDiscoursePost(${post.id})">${this.escapeHtml(post.title)}</div>
+                        <div class="discourse-post-meta">
+                            <div class="discourse-post-date">
+                                <span>📅</span>
+                                <span>${new Date(post.timestamp).toLocaleDateString()}</span>
+                            </div>
+                            <div class="discourse-post-words">
+                                <span>📝</span>
+                                <span>${post.wordCount || 0} words</span>
+                            </div>
+                        </div>
+                        ${this.isAdminLoggedIn() ? `
+                            <div class="discourse-post-actions">
+                                <button class="timeline-action-btn edit" onclick="event.stopPropagation(); app.openEditModal(${post.id})">Edit</button>
+                                <button class="timeline-action-btn delete" onclick="event.stopPropagation(); app.confirmDeletePost(${post.id})">Delete</button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('');
             }
 
             renderTimelinePosts(posts) {
@@ -2920,7 +3099,7 @@
             switchSubtab(subtabName) {
                 try {
                     // Validate subtab name
-                    const validSubtabs = ['history', 'philosophy', 'literature', 'science', 'technology'];
+                    const validSubtabs = ['history', 'philosophy', 'literature', 'science', 'technology', 'religion'];
                     if (!validSubtabs.includes(subtabName)) {
                         console.warn(`Invalid subtab name: ${subtabName}`);
                         return;
@@ -2959,13 +3138,16 @@
                     if (targetPane) {
                         targetPane.classList.add('active');
 
-                        // Special handling for history subtab - populate timeline if needed
+                        // Special handling for different subtabs
                         if (subtabName === 'history') {
                             // Check if timeline needs to be populated
                             const timelineAccordion = document.getElementById('timelineAccordion');
                             if (timelineAccordion && timelineAccordion.children.length === 0) {
                                 this.populateHistorySubtab();
                             }
+                        } else {
+                            // For other discourse subtabs, populate with relevant posts
+                            this.populateDiscourseSubtab(subtabName);
                         }
                     } else {
                         console.warn(`Subtab pane with id="${subtabName}Subtab" not found`);
