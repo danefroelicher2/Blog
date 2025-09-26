@@ -2048,6 +2048,7 @@
 
                 this.githubToken = null;  // Will be set when admin logs in
                 this.posts = [];
+                this.currentFileSHA = null;  // Track current GitHub file SHA for conflict resolution
 
                 // Security Configuration
                 this.securityConfig = {
@@ -3546,6 +3547,10 @@
                     const content = atob(data.content);
                     const posts = JSON.parse(content);
 
+                    // Store the current file SHA for subsequent operations
+                    this.currentFileSHA = data.sha;
+                    console.log('Posts loaded, SHA stored:', this.currentFileSHA);
+
                     // Also save to localStorage as backup
                     localStorage.setItem('blogPosts', JSON.stringify(posts));
 
@@ -3733,8 +3738,11 @@
 
                 for (let attempt = 1; attempt <= maxAttempts; attempt++) {
                     try {
-                        // Always fetch fresh SHA before each attempt
+                        // ALWAYS fetch fresh SHA before each operation to prevent 409 conflicts
+                        console.log(`Attempt ${attempt}: Fetching fresh SHA from GitHub...`);
                         const sha = await this.fetchCurrentFileSHA();
+                        this.currentFileSHA = sha; // Keep our stored SHA in sync
+                        console.log('Current GitHub SHA:', sha);
 
                         if (attempt > 1) {
                             this.showSaveStatus(`Resolving conflict... (attempt ${attempt})`, false);
@@ -3763,7 +3771,11 @@
                         });
 
                         if (response.ok) {
-                            return true; // Success!
+                            // SUCCESS! Update our stored SHA with the new one from GitHub
+                            const responseData = await response.json();
+                            this.currentFileSHA = responseData.content.sha;
+                            console.log('Save successful, updated SHA to:', this.currentFileSHA);
+                            return true;
                         }
 
                         const errorData = await response.json();
