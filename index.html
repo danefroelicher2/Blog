@@ -1813,6 +1813,7 @@
             <div class="admin-toolbar-right">
                 <button id="dashboardToggle">Dashboard</button>
                 <button id="adminCreatePostBtn">Create Post</button>
+                <button id="clearTokenBtn" class="btn-secondary" title="Clear saved GitHub token">Clear Token</button>
                 <button id="adminLogoutBtn" class="btn-danger">Logout</button>
             </div>
         </div>
@@ -2565,10 +2566,9 @@
             checkExistingSession() {
                 if (localStorage.getItem('adminPersistent') !== 'true') {
                     sessionStorage.removeItem('adminLoggedIn');
-                    sessionStorage.removeItem('githubToken');
                 } else {
-                    // Restore GitHub token if admin session is persistent
-                    const savedToken = sessionStorage.getItem('githubToken');
+                    // Always restore GitHub token from localStorage (persistent across sessions)
+                    const savedToken = localStorage.getItem('githubToken');
                     if (savedToken) {
                         this.githubToken = savedToken;
                     }
@@ -2749,6 +2749,7 @@
                 // Admin toolbar elements
                 const dashboardToggle = document.getElementById('dashboardToggle');
                 const adminCreatePostBtn = document.getElementById('adminCreatePostBtn');
+                const clearTokenBtn = document.getElementById('clearTokenBtn');
                 const adminLogoutBtn = document.getElementById('adminLogoutBtn');
 
 
@@ -2793,6 +2794,7 @@
                 // Admin toolbar
                 dashboardToggle.addEventListener('click', () => this.toggleDashboard());
                 adminCreatePostBtn.addEventListener('click', () => this.openModal());
+                clearTokenBtn.addEventListener('click', () => this.clearGitHubToken());
                 adminLogoutBtn.addEventListener('click', () => this.logout());
 
 
@@ -3062,23 +3064,6 @@
                 if (password === 'Pacers33!!!') {
                     if (!this.recordLoginAttempt(true)) return;
 
-                    // Prompt for GitHub token for cross-device sync
-                    const githubToken = prompt(
-                        'To enable cross-device synchronization, please enter your GitHub Personal Access Token:\n\n' +
-                        '1. Go to GitHub Settings > Developer Settings > Personal Access Tokens > Tokens (classic)\n' +
-                        '2. Generate new token with "repo" permissions\n' +
-                        '3. Copy and paste the token here\n\n' +
-                        'Leave empty to use local storage only:'
-                    );
-
-                    if (githubToken && githubToken.trim()) {
-                        this.githubToken = githubToken.trim();
-                        sessionStorage.setItem('githubToken', this.githubToken);
-                        this.showSuccessMessage('Admin logged in with GitHub sync enabled!');
-                    } else {
-                        this.showSuccessMessage('Admin logged in with local storage only.');
-                    }
-
                     sessionStorage.setItem('adminLoggedIn', 'true');
                     localStorage.setItem('adminPersistent', 'true');
 
@@ -3086,6 +3071,15 @@
                     this.startSessionTimer();
                     this.updateAdminUI();
                     this.closeAdminModal();
+
+                    // Check for existing token or prompt for new one if needed
+                    const savedToken = localStorage.getItem('githubToken');
+                    if (savedToken) {
+                        this.githubToken = savedToken;
+                        this.showSuccessMessage('Admin logged in with GitHub sync enabled!');
+                    } else {
+                        this.showSuccessMessage('Admin logged in! GitHub sync will be set up when you create your first post.');
+                    }
 
                     this.logSecurityEvent('LOGIN_SUCCESS', 'Admin login successful');
                 } else {
@@ -3553,10 +3547,78 @@
                 }
             }
 
+            // GitHub Token Management
+            async validateGitHubToken(token) {
+                if (!token) return false;
+
+                try {
+                    // Test token with a simple API call
+                    const response = await fetch('https://api.github.com/user', {
+                        headers: {
+                            'Authorization': `token ${token}`,
+                        }
+                    });
+                    return response.ok;
+                } catch (error) {
+                    console.error('Token validation error:', error);
+                    return false;
+                }
+            }
+
+            async promptForGitHubToken(reason = '') {
+                const message = reason ?
+                    `${reason}\n\nPlease enter a new GitHub Personal Access Token:` :
+                    'To enable cross-device synchronization, please enter your GitHub Personal Access Token:';
+
+                const fullPrompt = `${message}\n\n` +
+                    '1. Go to GitHub Settings > Developer Settings > Personal Access Tokens > Tokens (classic)\n' +
+                    '2. Generate new token with "repo" permissions\n' +
+                    '3. Copy and paste the token here\n\n' +
+                    'Leave empty to use local storage only:';
+
+                return prompt(fullPrompt);
+            }
+
+            async ensureValidGitHubToken() {
+                // First check if we have a saved token
+                let token = localStorage.getItem('githubToken');
+
+                if (token && await this.validateGitHubToken(token)) {
+                    this.githubToken = token;
+                    return true;
+                }
+
+                // Token is invalid or doesn't exist, prompt for new one
+                const reason = token ? 'Your saved GitHub token has expired or is invalid.' : '';
+                const newToken = await this.promptForGitHubToken(reason);
+
+                if (newToken && newToken.trim()) {
+                    const trimmedToken = newToken.trim();
+                    if (await this.validateGitHubToken(trimmedToken)) {
+                        this.githubToken = trimmedToken;
+                        localStorage.setItem('githubToken', trimmedToken);
+                        return true;
+                    } else {
+                        alert('Invalid GitHub token. Posts will be saved locally only.');
+                        return false;
+                    }
+                }
+
+                return false;
+            }
+
+            clearGitHubToken() {
+                this.githubToken = null;
+                localStorage.removeItem('githubToken');
+                this.showSuccessMessage('GitHub token cleared. You will be prompted for a new token on next post save.');
+            }
+
             async savePosts() {
                 try {
-                    if (!this.githubToken) {
-                        throw new Error('GitHub token not available. Please log in as admin.');
+                    // Ensure we have a valid GitHub token, prompt if needed
+                    if (!await this.ensureValidGitHubToken()) {
+                        // No token available, fall back to localStorage
+                        throw new Error('GitHub sync not available. Saving locally only.');
                     }
 
                     const url = `https://api.github.com/repos/${this.githubConfig.owner}/${this.githubConfig.repo}/contents/${this.githubConfig.path}`;
@@ -3683,8 +3745,7 @@
 
                 sessionStorage.removeItem('adminLoggedIn');
                 localStorage.removeItem('adminPersistent');
-                sessionStorage.removeItem('githubToken');
-                this.githubToken = null;
+                // Keep GitHub token in localStorage for persistence across sessions
                 this.clearTimers();
                 this.hideTimeoutWarning();
                 if (this.sessionDurationInterval) {
