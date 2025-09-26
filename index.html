@@ -2941,6 +2941,16 @@
                 return Math.round(sizeInBytes / (1024 * 1024)) + 'MB';
             }
 
+            formatDate(date) {
+                return date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
             startSessionDurationCounter() {
                 if (this.sessionDurationInterval) {
                     clearInterval(this.sessionDurationInterval);
@@ -3971,11 +3981,19 @@
 
             async loadDrafts() {
                 try {
-                    const { data, error } = await this.supabase
+                    let { data, error } = await this.supabase
                         .from('posts')
                         .select('*')
                         .eq('is_draft', true)
                         .order('created_at', { ascending: false });
+
+                    // If error due to missing is_draft column, show empty drafts
+                    if (error && error.message.includes('is_draft')) {
+                        console.warn('is_draft column not found. Please add is_draft column to posts table.');
+                        this.showErrorMessage('Database schema update required: Please add is_draft column to posts table.');
+                        this.displayDrafts([]);
+                        return;
+                    }
 
                     if (error) {
                         throw error;
@@ -4107,7 +4125,13 @@
                             is_draft: true
                         });
 
-                    if (error) throw error;
+                    if (error) {
+                        // If error due to missing is_draft column, provide helpful message
+                        if (error.message.includes('is_draft')) {
+                            throw new Error('Database schema update required. Please add is_draft column to posts table using: ALTER TABLE posts ADD COLUMN is_draft BOOLEAN DEFAULT false;');
+                        }
+                        throw error;
+                    }
                     return true;
                 } catch (error) {
                     console.error('Error saving draft to database:', error);
@@ -4119,11 +4143,24 @@
             async loadPosts() {
                 try {
                     this.showSaveStatus('Loading posts...', false);
-                    const { data, error } = await this.supabase
+                    // Try to load with is_draft filter first, fallback if column doesn't exist
+                    let { data, error } = await this.supabase
                         .from('posts')
                         .select('*')
                         .eq('is_draft', false)
                         .order('created_at', { ascending: false });
+
+                    // If error due to missing is_draft column, load all posts
+                    if (error && error.message.includes('is_draft')) {
+                        console.warn('is_draft column not found, loading all posts. Please add is_draft column to posts table.');
+                        const fallbackQuery = await this.supabase
+                            .from('posts')
+                            .select('*')
+                            .order('created_at', { ascending: false });
+
+                        data = fallbackQuery.data;
+                        error = fallbackQuery.error;
+                    }
 
                     if (error) {
                         throw error;
