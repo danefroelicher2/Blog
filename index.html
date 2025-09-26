@@ -2315,6 +2315,7 @@
                     this.posts = await this.loadPosts();
                     await this.migratePostData();
                     this.renderPosts();
+                    this.populateHistorySubtab();
                     this.updateAdminStats();
                 } catch (error) {
                     console.error('Error loading posts from database:', error);
@@ -2322,6 +2323,7 @@
                     // Fallback to localStorage for offline support
                     this.posts = this.loadPostsFromLocalStorage();
                     this.renderPosts();
+                    this.populateHistorySubtab();
                     this.updateAdminStats();
                 }
             }
@@ -2382,6 +2384,16 @@
                     }
                     if (post.century === undefined) {
                         post.century = null;
+                        needsSave = true;
+                    }
+                    // Ensure all posts have a proper dateString generated from timestamp
+                    if (!post.dateString && post.timestamp) {
+                        post.dateString = this.formatDate(new Date(post.timestamp));
+                        needsSave = true;
+                    }
+                    // Fix any invalid dateString that might exist
+                    if (post.dateString && post.dateString.includes('Invalid')) {
+                        post.dateString = this.formatDate(new Date(post.timestamp || post.created_at));
                         needsSave = true;
                     }
                 });
@@ -3293,11 +3305,8 @@
 
                         // Special handling for different subtabs
                         if (subtabName === 'history') {
-                            // Check if timeline needs to be populated
-                            const timelineAccordion = document.getElementById('timelineAccordion');
-                            if (timelineAccordion && timelineAccordion.children.length === 0) {
-                                this.populateHistorySubtab();
-                            }
+                            // Always refresh timeline to ensure latest posts are shown
+                            this.populateHistorySubtab();
                         } else {
                             // For other discourse subtabs, populate with relevant posts
                             this.populateDiscourseSubtab(subtabName);
@@ -4077,9 +4086,19 @@
 
             async publishDraft(draftId) {
                 try {
+                    const now = new Date();
+                    const publishTimestamp = now.toISOString();
+                    const dateString = this.formatDate(now);
+
                     const { error } = await this.supabase
                         .from('posts')
-                        .update({ is_draft: false })
+                        .update({
+                            is_draft: false,
+                            created_at: publishTimestamp,
+                            updated_at: publishTimestamp,
+                            timestamp: publishTimestamp,
+                            dateString: dateString
+                        })
                         .eq('id', draftId);
 
                     if (error) {
