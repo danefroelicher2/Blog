@@ -1813,6 +1813,7 @@
             <div class="admin-toolbar-right">
                 <button id="dashboardToggle">Dashboard</button>
                 <button id="adminCreatePostBtn">Create Post</button>
+                <button id="refreshPostsBtn" class="btn-secondary" title="Refresh posts from GitHub">🔄 Refresh</button>
                 <button id="clearTokenBtn" class="btn-secondary" title="Clear saved GitHub token">Clear Token</button>
                 <button id="adminLogoutBtn" class="btn-danger">Logout</button>
             </div>
@@ -2749,6 +2750,7 @@
                 // Admin toolbar elements
                 const dashboardToggle = document.getElementById('dashboardToggle');
                 const adminCreatePostBtn = document.getElementById('adminCreatePostBtn');
+                const refreshPostsBtn = document.getElementById('refreshPostsBtn');
                 const clearTokenBtn = document.getElementById('clearTokenBtn');
                 const adminLogoutBtn = document.getElementById('adminLogoutBtn');
 
@@ -2794,6 +2796,7 @@
                 // Admin toolbar
                 dashboardToggle.addEventListener('click', () => this.toggleDashboard());
                 adminCreatePostBtn.addEventListener('click', () => this.openModal());
+                refreshPostsBtn.addEventListener('click', () => this.refreshPostsFromGitHub());
                 clearTokenBtn.addEventListener('click', () => this.clearGitHubToken());
                 adminLogoutBtn.addEventListener('click', () => this.logout());
 
@@ -3508,6 +3511,23 @@
                 `;
             }
 
+            // Refresh posts from GitHub (useful after conflicts)
+            async refreshPostsFromGitHub() {
+                try {
+                    this.showSaveStatus('Refreshing posts from GitHub...', false);
+                    const posts = await this.loadPosts();
+                    this.posts = posts;
+                    this.renderPosts();
+                    this.updateAdminStats();
+                    this.showSaveStatus('✅ Posts refreshed from GitHub', false);
+                    return true;
+                } catch (error) {
+                    console.error('Error refreshing posts:', error);
+                    this.showSaveStatus('❌ Failed to refresh posts', true);
+                    return false;
+                }
+            }
+
             // GitHub API Methods
             async loadPosts() {
                 try {
@@ -3613,7 +3633,71 @@
                 this.showSuccessMessage('GitHub token cleared. You will be prompted for a new token on next post save.');
             }
 
+            // GitHub API Helpers with Robust Conflict Resolution
+            async fetchCurrentFileSHA() {
+                const url = `https://api.github.com/repos/${this.githubConfig.owner}/${this.githubConfig.repo}/contents/${this.githubConfig.path}`;
+
+                try {
+                    const response = await fetch(url);
+                    if (response.ok) {
+                        const data = await response.json();
+                        return data.sha;
+                    } else if (response.status === 404) {
+                        // File doesn't exist yet
+                        return null;
+                    } else {
+                        throw new Error(`Failed to fetch file info: ${response.status}`);
+                    }
+                } catch (error) {
+                    console.error('Error fetching file SHA:', error);
+                    return null;
+                }
+            }
+
+            showSaveStatus(message, isError = false) {
+                if (isError) {
+                    this.showErrorMessage(message);
+                } else {
+                    // Show a temporary status message
+                    const existingStatus = document.getElementById('saveStatus');
+                    if (existingStatus) {
+                        existingStatus.remove();
+                    }
+
+                    const statusDiv = document.createElement('div');
+                    statusDiv.id = 'saveStatus';
+                    statusDiv.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: var(--primary);
+                        color: white;
+                        padding: 12px 20px;
+                        border-radius: 8px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                        z-index: 10000;
+                        font-size: 14px;
+                        opacity: 0;
+                        transition: opacity 0.3s ease;
+                    `;
+                    statusDiv.textContent = message;
+                    document.body.appendChild(statusDiv);
+
+                    // Animate in
+                    setTimeout(() => statusDiv.style.opacity = '1', 10);
+
+                    // Remove after delay
+                    setTimeout(() => {
+                        statusDiv.style.opacity = '0';
+                        setTimeout(() => statusDiv.remove(), 300);
+                    }, 2000);
+                }
+            }
+
             async savePosts() {
+                // Show loading state
+                this.showSaveStatus('Saving to GitHub...', false);
+
                 try {
                     // Ensure we have a valid GitHub token, prompt if needed
                     if (!await this.ensureValidGitHubToken()) {
@@ -3621,61 +3705,106 @@
                         throw new Error('GitHub sync not available. Saving locally only.');
                     }
 
-                    const url = `https://api.github.com/repos/${this.githubConfig.owner}/${this.githubConfig.repo}/contents/${this.githubConfig.path}`;
+                    // Try saving with retry logic for 409 conflicts
+                    const success = await this.saveToGitHubWithRetry(3); // Max 3 attempts
 
-                    // First, get the current file to get its SHA
-                    let sha = null;
-                    try {
-                        const currentResponse = await fetch(url);
-                        if (currentResponse.ok) {
-                            const currentData = await currentResponse.json();
-                            sha = currentData.sha;
-                        }
-                    } catch (error) {
-                        // File might not exist yet, that's OK
+                    if (success) {
+                        // Also save to localStorage as backup
+                        localStorage.setItem('blogPosts', JSON.stringify(this.posts));
+                        this.showSaveStatus('✅ Saved to GitHub successfully!', false);
+                    } else {
+                        throw new Error('Failed to save after multiple attempts');
                     }
 
-                    // Prepare the content
-                    const content = btoa(JSON.stringify(this.posts, null, 2));
-
-                    const requestBody = {
-                        message: `Update blog posts - ${new Date().toISOString()}`,
-                        content: content,
-                        branch: this.githubConfig.branch
-                    };
-
-                    if (sha) {
-                        requestBody.sha = sha;
-                    }
-
-                    const response = await fetch(url, {
-                        method: 'PUT',
-                        headers: {
-                            'Authorization': `token ${this.githubToken}`,
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(requestBody)
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(`GitHub API error: ${response.status} - ${errorData.message}`);
-                    }
-
-                    // Also save to localStorage as backup
-                    localStorage.setItem('blogPosts', JSON.stringify(this.posts));
-
-                    this.showSuccessMessage('Posts saved to GitHub successfully!');
                 } catch (error) {
                     console.error('Error saving posts to GitHub:', error);
                     // Fallback to localStorage only
                     try {
                         localStorage.setItem('blogPosts', JSON.stringify(this.posts));
-                        this.showErrorMessage('Saved locally only. GitHub sync failed: ' + error.message);
+                        this.showSaveStatus('⚠️ Saved locally only - GitHub sync failed', true);
                     } catch (fallbackError) {
-                        alert('Error saving posts: ' + error.message);
+                        this.showSaveStatus('❌ Save failed completely', true);
                     }
                 }
+            }
+
+            async saveToGitHubWithRetry(maxAttempts = 3) {
+                const url = `https://api.github.com/repos/${this.githubConfig.owner}/${this.githubConfig.repo}/contents/${this.githubConfig.path}`;
+
+                for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+                    try {
+                        // Always fetch fresh SHA before each attempt
+                        const sha = await this.fetchCurrentFileSHA();
+
+                        if (attempt > 1) {
+                            this.showSaveStatus(`Resolving conflict... (attempt ${attempt})`, false);
+                        }
+
+                        // Prepare the content
+                        const content = btoa(JSON.stringify(this.posts, null, 2));
+
+                        const requestBody = {
+                            message: `Update blog posts - ${new Date().toISOString()}`,
+                            content: content,
+                            branch: this.githubConfig.branch
+                        };
+
+                        if (sha) {
+                            requestBody.sha = sha;
+                        }
+
+                        const response = await fetch(url, {
+                            method: 'PUT',
+                            headers: {
+                                'Authorization': `token ${this.githubToken}`,
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(requestBody)
+                        });
+
+                        if (response.ok) {
+                            return true; // Success!
+                        }
+
+                        const errorData = await response.json();
+
+                        if (response.status === 409) {
+                            // Conflict - the file was modified by someone else
+                            console.log(`Attempt ${attempt}: 409 conflict detected, retrying with fresh SHA...`);
+
+                            if (attempt === maxAttempts) {
+                                // Final attempt failed
+                                this.showSaveStatus('❌ Conflict detected - please refresh and try again', true);
+                                return false;
+                            }
+
+                            // Wait a bit before retrying
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                            continue;
+                        }
+
+                        if (response.status === 422) {
+                            // Validation failed - might be a SHA mismatch
+                            console.log(`Attempt ${attempt}: Validation error, retrying...`);
+                            if (attempt < maxAttempts) {
+                                await new Promise(resolve => setTimeout(resolve, 500));
+                                continue;
+                            }
+                        }
+
+                        // Other errors - don't retry
+                        throw new Error(`GitHub API error: ${response.status} - ${errorData.message || 'Unknown error'}`);
+
+                    } catch (error) {
+                        if (attempt === maxAttempts) {
+                            throw error;
+                        }
+                        console.log(`Attempt ${attempt} failed:`, error.message);
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                }
+
+                return false;
             }
 
             // Export/Import Methods
