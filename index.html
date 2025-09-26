@@ -2300,8 +2300,8 @@
                 });
             }
 
-            generateCenturyOptions() {
-                const timePeriods = [
+            generateTimePeriods() {
+                return [
                     {
                         value: '1776-present',
                         display: '1776 – Present'
@@ -2327,7 +2327,40 @@
                         display: '50,000+ BCE'
                     }
                 ];
+            }
 
+            generateDiscourseCategories() {
+                return [
+                    {
+                        value: 'history',
+                        display: 'History'
+                    },
+                    {
+                        value: 'philosophy',
+                        display: 'Philosophy'
+                    },
+                    {
+                        value: 'literature',
+                        display: 'Literature'
+                    },
+                    {
+                        value: 'science',
+                        display: 'Science'
+                    },
+                    {
+                        value: 'technology',
+                        display: 'Technology'
+                    },
+                    {
+                        value: 'religion',
+                        display: 'Religion'
+                    }
+                ];
+            }
+
+            generateCenturyOptions() {
+                const timePeriods = this.generateTimePeriods();
+                const discourseCategories = this.generateDiscourseCategories();
                 return [...timePeriods, ...discourseCategories];
             }
 
@@ -2339,7 +2372,7 @@
                         return;
                     }
 
-                    const timePeriods = this.generateCenturyOptions();
+                    const timePeriods = this.generateTimePeriods();
 
                     timelineAccordion.innerHTML = timePeriods.map(period => {
                         const periodPosts = this.getPostsByTimePeriod(period.value);
