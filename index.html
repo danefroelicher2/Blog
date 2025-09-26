@@ -343,7 +343,7 @@
             padding: 25px;
             margin-bottom: 30px;
             display: none;
-            animation: slideDown 0.3s ease;
+            animation: slideDownSimple 0.3s ease;
         }
 
         .admin-dashboard.active {
@@ -666,7 +666,7 @@
 
         .rate-limit-warning.active {
             display: block;
-            animation: slideDown 0.3s ease;
+            animation: slideDownSimple 0.3s ease;
         }
 
         .security-indicator {
@@ -764,6 +764,18 @@
 
         /* Animations */
         @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) translateY(-20px) scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) translateY(0) scale(1);
+            }
+        }
+
+        @keyframes slideDownSimple {
             from {
                 opacity: 0;
                 transform: translateY(-20px);
