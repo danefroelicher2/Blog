@@ -1652,8 +1652,10 @@
             padding: 30px;
             border-radius: 12px;
             width: 90%;
-            max-width: 600px;
-            max-height: 80vh;
+            /* UPDATED: Increased modal width from 600px to 75vw for larger workspace */
+            max-width: 75vw;
+            /* UPDATED: Increased modal height from 80vh to 75vh */
+            max-height: 75vh;
             overflow-y: auto;
             box-shadow: 0 20px 40px var(--shadow);
         }
@@ -1697,9 +1699,16 @@
         }
 
         textarea {
-            resize: vertical;
+            /* UPDATED: Removed manual resize to prevent conflicts with auto-expansion */
+            resize: none;
+            /* UPDATED: Starting height remains 200px */
             min-height: 200px;
+            /* UPDATED: Maximum height set to 50vh to allow growth within modal constraints */
+            max-height: 50vh;
             font-family: inherit;
+            /* UPDATED: Enable auto-expansion behavior */
+            overflow-y: auto;
+            box-sizing: border-box;
         }
 
         .modal-actions {
@@ -1854,7 +1863,10 @@
             .modal-content {
                 padding: 20px;
                 margin: 20px;
+                /* RESPONSIVE: On mobile, use full width minus margins */
                 width: calc(100% - 40px);
+                /* RESPONSIVE: Override desktop max-width for mobile */
+                max-width: calc(100% - 40px);
             }
 
             .post {
@@ -3231,6 +3243,27 @@
                     }
                 });
 
+                // AUTO-EXPANDING TEXTAREA: Pure UI functionality for better UX
+                // This dynamically adjusts textarea height as user types (NO data handling)
+                const autoResizeTextarea = (textarea) => {
+                    // Reset height to auto to get the correct scrollHeight
+                    textarea.style.height = 'auto';
+                    // Set height to scrollHeight to fit content, respecting min/max constraints
+                    textarea.style.height = textarea.scrollHeight + 'px';
+                };
+
+                // Apply auto-resize to Create Post textarea
+                const postContentTextarea = document.getElementById('postContent');
+                postContentTextarea.addEventListener('input', function() {
+                    autoResizeTextarea(this);
+                });
+
+                // Apply auto-resize to Edit Post textarea
+                const editPostContentTextarea = document.getElementById('editPostContent');
+                editPostContentTextarea.addEventListener('input', function() {
+                    autoResizeTextarea(this);
+                });
+
                 // Edit modal
                 editPostForm.addEventListener('submit', (e) => this.handleEditPost(e));
                 closeEditModal.addEventListener('click', () => this.closeEditModal());
@@ -3467,6 +3500,8 @@
                 // Reset category dropdown and hide century container
                 document.getElementById('postCategory').value = '';
                 document.getElementById('centuryDropdownContainer').style.display = 'none';
+                // AUTO-RESIZE: Reset textarea height to default
+                document.getElementById('postContent').style.height = 'auto';
                 document.body.style.overflow = 'auto';
                 this.editingDraftId = null;
             }
@@ -3841,6 +3876,13 @@
                 document.getElementById('editPostModal').style.display = 'block';
                 document.getElementById('editPostTitle').focus();
                 document.body.style.overflow = 'hidden';
+
+                // AUTO-RESIZE: Adjust textarea height to fit existing content when editing
+                setTimeout(() => {
+                    const textarea = document.getElementById('editPostContent');
+                    textarea.style.height = 'auto';
+                    textarea.style.height = textarea.scrollHeight + 'px';
+                }, 0);
             }
 
             closeEditModal() {
@@ -3849,6 +3891,8 @@
                 // Reset category dropdown and hide century container
                 document.getElementById('editPostCategory').value = '';
                 document.getElementById('editCenturyDropdownContainer').style.display = 'none';
+                // AUTO-RESIZE: Reset textarea height to default
+                document.getElementById('editPostContent').style.height = 'auto';
                 document.body.style.overflow = 'auto';
                 this.currentEditingPost = null;
             }
@@ -4221,6 +4265,13 @@
 
                     // Open the modal
                     this.openModal();
+
+                    // AUTO-RESIZE: Adjust textarea height to fit loaded draft content
+                    setTimeout(() => {
+                        const textarea = document.getElementById('postContent');
+                        textarea.style.height = 'auto';
+                        textarea.style.height = textarea.scrollHeight + 'px';
+                    }, 0);
 
                 } catch (error) {
                     console.error('Error loading draft for editing:', error);
