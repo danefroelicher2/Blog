@@ -2156,10 +2156,25 @@
                     <label for="postTitle">Title</label>
                     <input type="text" id="postTitle" required placeholder="Enter your post title...">
                 </div>
+                <!-- Primary Dropdown: Select which tab/category the post belongs to -->
                 <div class="form-group">
-                    <label for="postCentury">Time Period (optional)</label>
+                    <label for="postCategory">Post Category</label>
+                    <select id="postCategory">
+                        <option value="">Select a category...</option>
+                        <option value="history">History</option>
+                        <option value="philosophy">Philosophy</option>
+                        <option value="literature">Literature</option>
+                        <option value="science">Science</option>
+                        <option value="technology">Technology</option>
+                        <option value="religion">Religion</option>
+                    </select>
+                </div>
+
+                <!-- Secondary Dropdown: Year range selection (only shown when History is selected) -->
+                <div class="form-group" id="centuryDropdownContainer" style="display: none;">
+                    <label for="postCentury">Time Period</label>
                     <select id="postCentury">
-                        <option value="">Select a time period (optional)</option>
+                        <option value="">Select a time period...</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -2214,10 +2229,25 @@
                     <label for="editPostTitle">Title</label>
                     <input type="text" id="editPostTitle" required placeholder="Enter post title...">
                 </div>
+                <!-- Primary Dropdown: Select which tab/category the post belongs to -->
                 <div class="form-group">
-                    <label for="editPostCentury">Time Period (optional)</label>
+                    <label for="editPostCategory">Post Category</label>
+                    <select id="editPostCategory">
+                        <option value="">Select a category...</option>
+                        <option value="history">History</option>
+                        <option value="philosophy">Philosophy</option>
+                        <option value="literature">Literature</option>
+                        <option value="science">Science</option>
+                        <option value="technology">Technology</option>
+                        <option value="religion">Religion</option>
+                    </select>
+                </div>
+
+                <!-- Secondary Dropdown: Year range selection (only shown when History is selected) -->
+                <div class="form-group" id="editCenturyDropdownContainer" style="display: none;">
+                    <label for="editPostCentury">Time Period</label>
                     <select id="editPostCentury">
-                        <option value="">Select a time period (optional)</option>
+                        <option value="">Select a time period...</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -3173,6 +3203,33 @@
                 // Draft functionality
                 saveDraftBtn.addEventListener('click', (e) => this.handleSaveDraft(e));
 
+                // Category dropdown conditional rendering for Create Post modal
+                const postCategoryDropdown = document.getElementById('postCategory');
+                const centuryContainer = document.getElementById('centuryDropdownContainer');
+                postCategoryDropdown.addEventListener('change', (e) => {
+                    // Show year range dropdown only when "history" is selected
+                    if (e.target.value === 'history') {
+                        centuryContainer.style.display = 'block';
+                    } else {
+                        centuryContainer.style.display = 'none';
+                        // Clear the century selection when hiding
+                        document.getElementById('postCentury').value = '';
+                    }
+                });
+
+                // Category dropdown conditional rendering for Edit Post modal
+                const editPostCategoryDropdown = document.getElementById('editPostCategory');
+                const editCenturyContainer = document.getElementById('editCenturyDropdownContainer');
+                editPostCategoryDropdown.addEventListener('change', (e) => {
+                    // Show year range dropdown only when "history" is selected
+                    if (e.target.value === 'history') {
+                        editCenturyContainer.style.display = 'block';
+                    } else {
+                        editCenturyContainer.style.display = 'none';
+                        // Clear the century selection when hiding
+                        document.getElementById('editPostCentury').value = '';
+                    }
+                });
 
                 // Edit modal
                 editPostForm.addEventListener('submit', (e) => this.handleEditPost(e));
@@ -3407,6 +3464,9 @@
                 const modal = document.getElementById('createPostModal');
                 modal.style.display = 'none';
                 document.getElementById('postForm').reset();
+                // Reset category dropdown and hide century container
+                document.getElementById('postCategory').value = '';
+                document.getElementById('centuryDropdownContainer').style.display = 'none';
                 document.body.style.overflow = 'auto';
                 this.editingDraftId = null;
             }
@@ -3559,7 +3619,11 @@
 
                 const title = document.getElementById('postTitle').value.trim();
                 const content = document.getElementById('postContent').value.trim();
-                const century = document.getElementById('postCentury').value;
+                const category = document.getElementById('postCategory').value;
+                const yearRange = document.getElementById('postCentury').value;
+
+                // For History posts, use the year range; for other categories, use the category name
+                const century = category === 'history' ? yearRange : category;
 
                 if (!title || !content) {
                     this.showErrorMessage('Please fill in both title and content.');
@@ -3751,7 +3815,29 @@
                 this.currentEditingPost = post;
                 document.getElementById('editPostTitle').value = post.title;
                 document.getElementById('editPostContent').value = post.content;
-                document.getElementById('editPostCentury').value = post.century || '';
+
+                // Determine if the century value is a category or a year range
+                const categories = ['history', 'philosophy', 'literature', 'science', 'technology', 'religion'];
+                const centuryValue = post.century || '';
+
+                // Check if the century value is one of the category names
+                if (categories.includes(centuryValue)) {
+                    // It's a category name (non-history category)
+                    document.getElementById('editPostCategory').value = centuryValue;
+                    document.getElementById('editPostCentury').value = '';
+                    document.getElementById('editCenturyDropdownContainer').style.display = 'none';
+                } else if (centuryValue) {
+                    // It's a year range (history post)
+                    document.getElementById('editPostCategory').value = 'history';
+                    document.getElementById('editPostCentury').value = centuryValue;
+                    document.getElementById('editCenturyDropdownContainer').style.display = 'block';
+                } else {
+                    // No category set
+                    document.getElementById('editPostCategory').value = '';
+                    document.getElementById('editPostCentury').value = '';
+                    document.getElementById('editCenturyDropdownContainer').style.display = 'none';
+                }
+
                 document.getElementById('editPostModal').style.display = 'block';
                 document.getElementById('editPostTitle').focus();
                 document.body.style.overflow = 'hidden';
@@ -3760,6 +3846,9 @@
             closeEditModal() {
                 document.getElementById('editPostModal').style.display = 'none';
                 document.getElementById('editPostForm').reset();
+                // Reset category dropdown and hide century container
+                document.getElementById('editPostCategory').value = '';
+                document.getElementById('editCenturyDropdownContainer').style.display = 'none';
                 document.body.style.overflow = 'auto';
                 this.currentEditingPost = null;
             }
@@ -3786,7 +3875,11 @@
 
                 const title = document.getElementById('editPostTitle').value.trim();
                 const content = document.getElementById('editPostContent').value.trim();
-                const century = document.getElementById('editPostCentury').value;
+                const category = document.getElementById('editPostCategory').value;
+                const yearRange = document.getElementById('editPostCentury').value;
+
+                // For History posts, use the year range; for other categories, use the category name
+                const century = category === 'history' ? yearRange : category;
 
                 if (!title || !content) {
                     this.showErrorMessage('Please fill in both title and content.');
@@ -3966,7 +4059,11 @@
 
                 const title = document.getElementById('postTitle').value.trim();
                 const content = document.getElementById('postContent').value.trim();
-                const century = document.getElementById('postCentury').value;
+                const category = document.getElementById('postCategory').value;
+                const yearRange = document.getElementById('postCentury').value;
+
+                // For History posts, use the year range; for other categories, use the category name
+                const century = category === 'history' ? yearRange : category;
 
                 if (!title || !content) {
                     this.showErrorMessage('Please fill in both title and content.');
@@ -4096,7 +4193,28 @@
                     // Fill the create post modal with draft data
                     document.getElementById('postTitle').value = data.title;
                     document.getElementById('postContent').value = data.content;
-                    document.getElementById('postCentury').value = data.century || '';
+
+                    // Determine if the century value is a category or a year range
+                    const categories = ['history', 'philosophy', 'literature', 'science', 'technology', 'religion'];
+                    const centuryValue = data.century || '';
+
+                    // Check if the century value is one of the category names
+                    if (categories.includes(centuryValue)) {
+                        // It's a category name (non-history category)
+                        document.getElementById('postCategory').value = centuryValue;
+                        document.getElementById('postCentury').value = '';
+                        document.getElementById('centuryDropdownContainer').style.display = 'none';
+                    } else if (centuryValue) {
+                        // It's a year range (history post)
+                        document.getElementById('postCategory').value = 'history';
+                        document.getElementById('postCentury').value = centuryValue;
+                        document.getElementById('centuryDropdownContainer').style.display = 'block';
+                    } else {
+                        // No category set
+                        document.getElementById('postCategory').value = '';
+                        document.getElementById('postCentury').value = '';
+                        document.getElementById('centuryDropdownContainer').style.display = 'none';
+                    }
 
                     // Store the draft ID for updating
                     this.editingDraftId = draftId;
