@@ -2343,7 +2343,9 @@
                 this.initSecurityFeatures();
                 this.populateCenturyDropdowns();
                 this.initDiscourseSubtabs();
-                this.setUserMode();
+                // FIX: Removed unconditional setUserMode() call that was overriding admin authentication
+                // checkExistingSession() already calls updateAdminUI() which sets correct mode
+                // This was causing admin panel to disappear on page reload despite valid auth
 
                 // Initialize Supabase client
                 this.initSupabase();
@@ -2371,6 +2373,12 @@
                     this.renderPosts();
                     this.populateHistorySubtab();
                     this.updateAdminStats();
+
+                    // FIX: Re-verify admin UI state after async post loading completes
+                    // This ensures admin panel stays visible even if there were timing issues
+                    if (this.isAdminLoggedIn()) {
+                        this.updateAdminUI();
+                    }
                 } catch (error) {
                     console.error('Error loading posts from database:', error);
                     this.showErrorMessage('Failed to load posts. Using offline mode.');
@@ -2379,6 +2387,11 @@
                     this.renderPosts();
                     this.populateHistorySubtab();
                     this.updateAdminStats();
+
+                    // FIX: Re-verify admin UI state after fallback loading
+                    if (this.isAdminLoggedIn()) {
+                        this.updateAdminUI();
+                    }
                 }
             }
 
@@ -2971,12 +2984,24 @@
             }
 
             checkExistingSession() {
-                if (localStorage.getItem('adminPersistent') !== 'true') {
+                // FIX: Enhanced session checking with explicit state logging
+                const hasPersistentAuth = localStorage.getItem('adminPersistent') === 'true';
+                const hasSessionAuth = sessionStorage.getItem('adminLoggedIn') === 'true';
+
+                // Clear session auth if no persistent auth exists
+                if (!hasPersistentAuth) {
                     sessionStorage.removeItem('adminLoggedIn');
                 }
+
+                // Update UI based on current auth state
                 this.updateAdminUI();
+
+                // Start session timer if authenticated
                 if (this.isAdminLoggedIn()) {
                     this.startSessionTimer();
+                    console.log('✅ Admin session restored on page load');
+                } else {
+                    console.log('👤 No admin session found - user mode active');
                 }
             }
 
@@ -2986,7 +3011,11 @@
             }
 
             setAdminMode() {
-                document.getElementById('adminToolbar').classList.add('active');
+                // FIX: Added logging to track when admin mode is activated
+                const toolbar = document.getElementById('adminToolbar');
+                toolbar.classList.add('active');
+                console.log('🔓 Admin toolbar activated - classList:', toolbar.classList.value);
+
                 this.adminLoginTime = Date.now();
                 this.startSessionDurationCounter();
                 this.updateAdminStats();
@@ -2998,13 +3027,19 @@
                 const headerIndicator = document.getElementById('headerAdminIndicator');
                 const footerAdminLink = document.getElementById('footerAdminLink');
 
-                if (this.isAdminLoggedIn()) {
+                // FIX: Added comprehensive logging for debugging admin panel visibility
+                const isAuthenticated = this.isAdminLoggedIn();
+                console.log('🔄 updateAdminUI called - Auth status:', isAuthenticated);
+
+                if (isAuthenticated) {
+                    console.log('✅ Setting ADMIN mode - Panel should be visible');
                     this.setAdminMode();
                     createPostBtn.style.display = 'block';
                     adminStatus.style.display = 'flex';
                     headerIndicator.classList.add('active');
                     footerAdminLink.style.display = 'none';
                 } else {
+                    console.log('👤 Setting USER mode - Panel hidden');
                     this.setUserMode();
                     createPostBtn.style.display = 'none';
                     adminStatus.style.display = 'none';
