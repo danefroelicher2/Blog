@@ -6,8 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dane's Blog</title>
 
-    <!-- Supabase JavaScript Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -2297,16 +2295,193 @@
     </div>
 
     <script>
+        // GitHub Storage Class - Manages posts in GitHub repository
+        class GitHubStorage {
+            constructor(owner, repo) {
+                this.owner = owner;
+                this.repo = repo;
+                this.token = sessionStorage.getItem('githubToken') || null;
+                this.postsPath = 'data/posts.json';
+                this.draftsPath = 'data/drafts.json';
+                this.apiBase = 'https://api.github.com';
+            }
+
+            setToken(token) {
+                this.token = token;
+                sessionStorage.setItem('githubToken', token);
+            }
+
+            async loadPosts() {
+                try {
+                    const response = await fetch(
+                        `${this.apiBase}/repos/${this.owner}/${this.repo}/contents/${this.postsPath}`,
+                        {
+                            headers: {
+                                'Accept': 'application/vnd.github.v3+json'
+                            }
+                        }
+                    );
+
+                    if (!response.ok) {
+                        throw new Error(`GitHub API error: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    const content = atob(data.content);
+                    return JSON.parse(content);
+                } catch (error) {
+                    console.error('Error loading posts from GitHub:', error);
+                    throw error;
+                }
+            }
+
+            async loadDrafts() {
+                try {
+                    const response = await fetch(
+                        `${this.apiBase}/repos/${this.owner}/${this.repo}/contents/${this.draftsPath}`,
+                        {
+                            headers: {
+                                'Accept': 'application/vnd.github.v3+json'
+                            }
+                        }
+                    );
+
+                    if (!response.ok) {
+                        throw new Error(`GitHub API error: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    const content = atob(data.content);
+                    return JSON.parse(content);
+                } catch (error) {
+                    console.error('Error loading drafts from GitHub:', error);
+                    return [];
+                }
+            }
+
+            async savePosts(posts) {
+                if (!this.token) {
+                    throw new Error('GitHub token required for saving posts');
+                }
+
+                try {
+                    // First, get the current file to get its SHA
+                    const getResponse = await fetch(
+                        `${this.apiBase}/repos/${this.owner}/${this.repo}/contents/${this.postsPath}`,
+                        {
+                            headers: {
+                                'Accept': 'application/vnd.github.v3+json',
+                                'Authorization': `token ${this.token}`
+                            }
+                        }
+                    );
+
+                    let sha = null;
+                    if (getResponse.ok) {
+                        const currentFile = await getResponse.json();
+                        sha = currentFile.sha;
+                    }
+
+                    // Encode content to base64
+                    const content = btoa(JSON.stringify(posts, null, 2));
+
+                    // Update or create the file
+                    const updateResponse = await fetch(
+                        `${this.apiBase}/repos/${this.owner}/${this.repo}/contents/${this.postsPath}`,
+                        {
+                            method: 'PUT',
+                            headers: {
+                                'Accept': 'application/vnd.github.v3+json',
+                                'Authorization': `token ${this.token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                message: `Update posts - ${new Date().toISOString()}`,
+                                content: content,
+                                sha: sha
+                            })
+                        }
+                    );
+
+                    if (!updateResponse.ok) {
+                        const error = await updateResponse.json();
+                        throw new Error(`GitHub API error: ${error.message}`);
+                    }
+
+                    return true;
+                } catch (error) {
+                    console.error('Error saving posts to GitHub:', error);
+                    throw error;
+                }
+            }
+
+            async saveDrafts(drafts) {
+                if (!this.token) {
+                    throw new Error('GitHub token required for saving drafts');
+                }
+
+                try {
+                    // First, get the current file to get its SHA
+                    const getResponse = await fetch(
+                        `${this.apiBase}/repos/${this.owner}/${this.repo}/contents/${this.draftsPath}`,
+                        {
+                            headers: {
+                                'Accept': 'application/vnd.github.v3+json',
+                                'Authorization': `token ${this.token}`
+                            }
+                        }
+                    );
+
+                    let sha = null;
+                    if (getResponse.ok) {
+                        const currentFile = await getResponse.json();
+                        sha = currentFile.sha;
+                    }
+
+                    // Encode content to base64
+                    const content = btoa(JSON.stringify(drafts, null, 2));
+
+                    // Update or create the file
+                    const updateResponse = await fetch(
+                        `${this.apiBase}/repos/${this.owner}/${this.repo}/contents/${this.draftsPath}`,
+                        {
+                            method: 'PUT',
+                            headers: {
+                                'Accept': 'application/vnd.github.v3+json',
+                                'Authorization': `token ${this.token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                message: `Update drafts - ${new Date().toISOString()}`,
+                                content: content,
+                                sha: sha
+                            })
+                        }
+                    );
+
+                    if (!updateResponse.ok) {
+                        const error = await updateResponse.json();
+                        throw new Error(`GitHub API error: ${error.message}`);
+                    }
+
+                    return true;
+                } catch (error) {
+                    console.error('Error saving drafts to GitHub:', error);
+                    throw error;
+                }
+            }
+        }
+
         class BlogApp {
             constructor() {
                 this.posts = [];
                 this.editingDraftId = null;
+                this.drafts = [];
 
-                // Supabase Configuration
-                // Your actual Supabase configuration:
-                this.supabaseUrl = 'https://cehdeiggnmsaccdazvgm.supabase.co';
-                this.supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNlaGRlaWdnbm1zYWNjZGF6dmdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4OTQyMjgsImV4cCI6MjA3NDQ3MDIyOH0.noHwLw-MZEWfp6gBisXwzEIRfmoV6cNb2uyy2Zv6pBE';
-                this.supabase = null; // Will be initialized in init()
+                // GitHub Configuration
+                this.githubOwner = 'danefroelicher2';
+                this.githubRepo = 'Blog';
+                this.githubStorage = null; // Will be initialized in init()
 
                 // Security Configuration
                 this.securityConfig = {
@@ -2347,22 +2522,21 @@
                 // checkExistingSession() already calls updateAdminUI() which sets correct mode
                 // This was causing admin panel to disappear on page reload despite valid auth
 
-                // Initialize Supabase client
-                this.initSupabase();
+                // Initialize GitHub storage
+                this.initGitHubStorage();
 
-                // Load posts from database
+                // Load posts from GitHub
                 this.initializePosts();
             }
 
-            initSupabase() {
+            initGitHubStorage() {
                 try {
-                    // Initialize Supabase client with configuration
-                    const { createClient } = supabase;
-                    this.supabase = createClient(this.supabaseUrl, this.supabaseKey);
-                    console.log('Supabase client initialized successfully');
+                    // Initialize GitHub storage client
+                    this.githubStorage = new GitHubStorage(this.githubOwner, this.githubRepo);
+                    console.log('GitHub storage initialized successfully');
                 } catch (error) {
-                    console.error('Error initializing Supabase:', error);
-                    this.showErrorMessage('Database connection failed. Using offline mode.');
+                    console.error('Error initializing GitHub storage:', error);
+                    this.showErrorMessage('GitHub connection failed. Using offline mode.');
                 }
             }
 
@@ -2442,13 +2616,13 @@
                 let needsSave = false;
                 this.posts.forEach(post => {
                     // Map database fields to JavaScript object properties for consistency
-                    // Map created_at to timestamp (Supabase uses created_at)
+                    // Map created_at to timestamp
                     if (!post.timestamp && post.created_at) {
                         post.timestamp = post.created_at;
                         needsSave = true;
                     }
 
-                    // Map word_count to wordCount (Supabase uses word_count)
+                    // Map word_count to wordCount
                     if (!post.wordCount && post.word_count) {
                         post.wordCount = post.word_count;
                         needsSave = true;
@@ -3289,13 +3463,13 @@
 
                 // Apply auto-resize to Create Post textarea
                 const postContentTextarea = document.getElementById('postContent');
-                postContentTextarea.addEventListener('input', function() {
+                postContentTextarea.addEventListener('input', function () {
                     autoResizeTextarea(this);
                 });
 
                 // Apply auto-resize to Edit Post textarea
                 const editPostContentTextarea = document.getElementById('editPostContent');
-                editPostContentTextarea.addEventListener('input', function() {
+                editPostContentTextarea.addEventListener('input', function () {
                     autoResizeTextarea(this);
                 });
 
@@ -3581,6 +3755,9 @@
 
                     this.showSuccessMessage('Admin logged in successfully!');
 
+                    // Prompt for GitHub token for saving posts
+                    this.promptForGitHubToken();
+
                     this.logSecurityEvent('LOGIN_SUCCESS', 'Admin login successful');
                 } else {
                     if (!this.recordLoginAttempt(false)) return;
@@ -3589,6 +3766,36 @@
                     document.getElementById('adminPassword').value = '';
                     document.getElementById('adminPassword').focus();
                 }
+            }
+
+            promptForGitHubToken() {
+                // Check if token already exists in sessionStorage
+                const existingToken = sessionStorage.getItem('githubToken');
+                if (existingToken) {
+                    // Token already exists, ask if user wants to update it
+                    if (!confirm('GitHub token already set. Do you want to update it?')) {
+                        return;
+                    }
+                }
+
+                // Prompt for GitHub Personal Access Token
+                const token = prompt(
+                    'Enter your GitHub Personal Access Token:\n\n' +
+                    'This token is needed to save posts to your GitHub repository.\n' +
+                    'Create one at: https://github.com/settings/tokens\n\n' +
+                    'Required permissions: repo (Full control of private repositories)\n\n' +
+                    'The token will be stored in your browser session only.'
+                );
+
+                if (token && token.trim()) {
+                    // Store the token in the GitHub storage instance
+                    this.githubStorage.setToken(token.trim());
+                    this.showSuccessMessage('GitHub token saved successfully!');
+                } else if (token !== null) {
+                    // User clicked OK but entered empty token
+                    this.showErrorMessage('GitHub token is required to save posts. You can set it later from the admin menu.');
+                }
+                // If user clicked Cancel (token === null), do nothing
             }
 
             // Activity Logging System
@@ -3703,21 +3910,28 @@
                 try {
                     // Check if we're editing a draft
                     if (this.editingDraftId) {
-                        // Update existing draft as published post
-                        const { error } = await this.supabase
-                            .from('posts')
-                            .update({
-                                title: title,
-                                content: content,
-                                century: century || null,
-                                updated_at: new Date().toISOString(),
-                                word_count: this.countWords(content),
-                                is_draft: false
-                            })
-                            .eq('id', this.editingDraftId)
-                            .eq('is_draft', true);
+                        // Convert draft to published post
+                        const now = new Date();
+                        const post = {
+                            id: this.editingDraftId,
+                            title: title,
+                            content: content,
+                            century: century || null,
+                            timestamp: now.toISOString(),
+                            lastModified: now.toISOString(),
+                            wordCount: this.countWords(content),
+                            dateString: this.formatDate(now)
+                        };
 
-                        if (error) throw error;
+                        // Add to posts array
+                        this.posts.push(post);
+
+                        // Remove from drafts array
+                        this.drafts = this.drafts.filter(d => d.id !== this.editingDraftId);
+
+                        // Save both to GitHub
+                        await this.githubStorage.savePosts(this.posts);
+                        await this.githubStorage.saveDrafts(this.drafts);
 
                         this.editingDraftId = null;
                         this.showSuccessMessage('Draft published successfully!');
@@ -4152,19 +4366,25 @@
                 try {
                     if (this.editingDraftId) {
                         // Update existing draft
-                        const { error } = await this.supabase
-                            .from('posts')
-                            .update({
-                                title: title,
-                                content: content,
-                                century: century || null,
-                                updated_at: new Date().toISOString(),
-                                word_count: this.countWords(content)
-                            })
-                            .eq('id', this.editingDraftId)
-                            .eq('is_draft', true);
+                        const updatedDraft = {
+                            id: this.editingDraftId,
+                            title: title,
+                            content: content,
+                            century: century || null,
+                            timestamp: this.drafts.find(d => d.id === this.editingDraftId)?.timestamp || new Date().toISOString(),
+                            lastModified: new Date().toISOString(),
+                            wordCount: this.countWords(content),
+                            dateString: this.formatDate(new Date())
+                        };
 
-                        if (error) throw error;
+                        // Update in drafts array
+                        const index = this.drafts.findIndex(d => d.id === this.editingDraftId);
+                        if (index !== -1) {
+                            this.drafts[index] = updatedDraft;
+                        }
+
+                        // Save to GitHub
+                        await this.githubStorage.saveDrafts(this.drafts);
 
                         this.editingDraftId = null;
                         this.showSuccessMessage('Draft updated successfully!');
@@ -4182,7 +4402,7 @@
                             is_draft: true
                         };
 
-                        // Save to Supabase
+                        // Save to GitHub
                         await this.saveDraftToDatabase(draft);
                         this.showSuccessMessage('Draft saved successfully!');
                     }
@@ -4203,28 +4423,15 @@
 
             async loadDrafts() {
                 try {
-                    let { data, error } = await this.supabase
-                        .from('posts')
-                        .select('*')
-                        .eq('is_draft', true)
-                        .order('created_at', { ascending: false });
+                    // Load drafts from GitHub
+                    const data = await this.githubStorage.loadDrafts();
+                    this.drafts = data || [];
 
-                    // If error due to missing is_draft column, show empty drafts
-                    if (error && error.message.includes('is_draft')) {
-                        console.warn('is_draft column not found. Please add is_draft column to posts table.');
-                        this.showErrorMessage('Database schema update required: Please add is_draft column to posts table.');
-                        this.displayDrafts([]);
-                        return;
-                    }
-
-                    if (error) {
-                        throw error;
-                    }
-
-                    this.displayDrafts(data || []);
+                    this.displayDrafts(this.drafts);
                 } catch (error) {
-                    console.error('Error loading drafts:', error);
+                    console.error('Error loading drafts from GitHub:', error);
                     this.showErrorMessage('Error loading drafts: ' + error.message);
+                    this.displayDrafts([]);
                 }
             }
 
@@ -4258,15 +4465,11 @@
 
             async editDraft(draftId) {
                 try {
-                    const { data, error } = await this.supabase
-                        .from('posts')
-                        .select('*')
-                        .eq('id', draftId)
-                        .eq('is_draft', true)
-                        .single();
+                    // Find draft in local drafts array
+                    const data = this.drafts.find(d => d.id === draftId);
 
-                    if (error) {
-                        throw error;
+                    if (!data) {
+                        throw new Error('Draft not found');
                     }
 
                     // Fill the create post modal with draft data
@@ -4316,24 +4519,36 @@
 
             async publishDraft(draftId) {
                 try {
+                    // Find the draft
+                    const draft = this.drafts.find(d => d.id === draftId);
+                    if (!draft) {
+                        throw new Error('Draft not found');
+                    }
+
                     const now = new Date();
                     const publishTimestamp = now.toISOString();
-                    const dateString = this.formatDate(now);
-                    const wordCount = await this.getDraftWordCount(draftId);
 
-                    const { error } = await this.supabase
-                        .from('posts')
-                        .update({
-                            is_draft: false,
-                            created_at: publishTimestamp,
-                            updated_at: publishTimestamp,
-                            word_count: wordCount
-                        })
-                        .eq('id', draftId);
+                    // Convert draft to post
+                    const post = {
+                        id: draft.id,
+                        title: draft.title,
+                        content: draft.content,
+                        century: draft.century,
+                        timestamp: publishTimestamp,
+                        lastModified: publishTimestamp,
+                        wordCount: this.countWords(draft.content || ''),
+                        dateString: this.formatDate(now)
+                    };
 
-                    if (error) {
-                        throw error;
-                    }
+                    // Add to posts array
+                    this.posts.push(post);
+
+                    // Remove from drafts array
+                    this.drafts = this.drafts.filter(d => d.id !== draftId);
+
+                    // Save both to GitHub
+                    await this.githubStorage.savePosts(this.posts);
+                    await this.githubStorage.saveDrafts(this.drafts);
 
                     this.showSuccessMessage('Draft published successfully!');
                     this.loadDrafts();
@@ -4347,14 +4562,9 @@
 
             async getDraftWordCount(draftId) {
                 try {
-                    const { data, error } = await this.supabase
-                        .from('posts')
-                        .select('content')
-                        .eq('id', draftId)
-                        .single();
-
-                    if (error) throw error;
-                    return this.countWords(data.content || '');
+                    const draft = this.drafts.find(d => d.id === draftId);
+                    if (!draft) throw new Error('Draft not found');
+                    return this.countWords(draft.content || '');
                 } catch (error) {
                     console.error('Error getting draft word count:', error);
                     return 0;
@@ -4367,90 +4577,57 @@
                 }
 
                 try {
-                    const { error } = await this.supabase
-                        .from('posts')
-                        .delete()
-                        .eq('id', draftId)
-                        .eq('is_draft', true);
+                    // Remove draft from array
+                    this.drafts = this.drafts.filter(d => d.id !== draftId);
 
-                    if (error) {
-                        throw error;
-                    }
+                    // Save updated drafts to GitHub
+                    await this.githubStorage.saveDrafts(this.drafts);
 
                     this.showSuccessMessage('Draft deleted successfully!');
                     this.loadDrafts();
 
                 } catch (error) {
-                    console.error('Error deleting draft:', error);
+                    console.error('Error deleting draft from GitHub:', error);
                     this.showErrorMessage('Error deleting draft: ' + error.message);
                 }
             }
 
             async saveDraftToDatabase(draft) {
                 try {
-                    const { error } = await this.supabase
-                        .from('posts')
-                        .upsert({
-                            id: draft.id,
-                            title: draft.title,
-                            content: draft.content,
-                            century: draft.century,
-                            created_at: draft.timestamp,
-                            updated_at: draft.lastModified,
-                            word_count: draft.wordCount,
-                            is_draft: true
-                        });
-
-                    if (error) {
-                        // If error due to missing is_draft column, provide helpful message
-                        if (error.message.includes('is_draft')) {
-                            throw new Error('Database schema update required. Please add is_draft column to posts table using: ALTER TABLE posts ADD COLUMN is_draft BOOLEAN DEFAULT false;');
-                        }
-                        throw error;
+                    // Update or add draft to drafts array
+                    const existingIndex = this.drafts.findIndex(d => d.id === draft.id);
+                    if (existingIndex !== -1) {
+                        this.drafts[existingIndex] = draft;
+                    } else {
+                        this.drafts.push(draft);
                     }
+
+                    // Save drafts to GitHub
+                    await this.githubStorage.saveDrafts(this.drafts);
                     return true;
                 } catch (error) {
-                    console.error('Error saving draft to database:', error);
+                    console.error('Error saving draft to GitHub:', error);
                     throw error;
                 }
             }
 
-            // Supabase Database Methods
+            // GitHub Storage Methods
             async loadPosts() {
                 try {
                     this.showSaveStatus('Loading posts...', false);
-                    // Try to load with is_draft filter first, fallback if column doesn't exist
-                    let { data, error } = await this.supabase
-                        .from('posts')
-                        .select('*')
-                        .eq('is_draft', false)
-                        .order('created_at', { ascending: false });
 
-                    // If error due to missing is_draft column, load all posts
-                    if (error && error.message.includes('is_draft')) {
-                        console.warn('is_draft column not found, loading all posts. Please add is_draft column to posts table.');
-                        const fallbackQuery = await this.supabase
-                            .from('posts')
-                            .select('*')
-                            .order('created_at', { ascending: false });
+                    // Load posts from GitHub
+                    const data = await this.githubStorage.loadPosts();
 
-                        data = fallbackQuery.data;
-                        error = fallbackQuery.error;
-                    }
-
-                    if (error) {
-                        throw error;
-                    }
-
-                    // Also save to localStorage as backup
+                    // Also save to localStorage as backup for offline mode
                     localStorage.setItem('blogPosts', JSON.stringify(data));
 
-                    console.log('Posts loaded from Supabase:', data.length);
+                    console.log('Posts loaded from GitHub:', data.length);
                     return data || [];
 
                 } catch (error) {
-                    console.error('Error loading posts from Supabase:', error);
-                    // Fallback to localStorage
+                    console.error('Error loading posts from GitHub:', error);
+                    // Fallback to localStorage for offline mode
                     return this.loadPostsFromLocalStorage();
                 }
             }
@@ -4510,83 +4687,59 @@
                 this.showSaveStatus('Saving posts...', false);
 
                 try {
-                    // Save all posts to Supabase - we'll implement upsert logic
-                    for (const post of this.posts) {
-                        const { error } = await this.supabase
-                            .from('posts')
-                            .upsert({
-                                id: post.id,
-                                title: post.title,
-                                content: post.content,
-                                century: post.century,
-                                created_at: post.timestamp,
-                                updated_at: new Date().toISOString(),
-                                word_count: post.wordCount,
-                                is_draft: false
-                            });
+                    // Save all posts to GitHub
+                    await this.githubStorage.savePosts(this.posts);
 
-                        if (error) {
-                            throw error;
-                        }
-                    }
-
-                    // Also save to localStorage as backup
+                    // Also save to localStorage as backup for offline mode
                     localStorage.setItem('blogPosts', JSON.stringify(this.posts));
                     this.showSaveStatus('✅ Saved successfully!', false);
 
                 } catch (error) {
-                    console.error('Error saving posts to Supabase:', error);
+                    console.error('Error saving posts to GitHub:', error);
                     // Fallback to localStorage only
                     try {
                         localStorage.setItem('blogPosts', JSON.stringify(this.posts));
-                        this.showSaveStatus('⚠️ Saved locally only - Database sync failed', true);
+                        this.showSaveStatus('⚠️ Saved locally only - GitHub sync failed', true);
                     } catch (fallbackError) {
                         this.showSaveStatus('❌ Save failed completely', true);
                     }
                 }
             }
 
-            // Individual Supabase Post Operations
+            // Individual GitHub Post Operations
             async savePostToDatabase(post) {
                 try {
-                    const { data, error } = await this.supabase
-                        .from('posts')
-                        .upsert({
-                            id: post.id,
-                            title: post.title,
-                            content: post.content,
-                            century: post.century,
-                            created_at: post.timestamp,
-                            updated_at: new Date().toISOString(),
-                            word_count: post.wordCount,
-                            is_draft: false
-                        })
-                        .select();
+                    // Update the post in the posts array and save to GitHub
+                    const existingIndex = this.posts.findIndex(p => p.id === post.id);
+                    if (existingIndex !== -1) {
+                        this.posts[existingIndex] = post;
+                    } else {
+                        this.posts.push(post);
+                    }
 
-                    if (error) throw error;
+                    // Save all posts to GitHub
+                    await this.githubStorage.savePosts(this.posts);
 
-                    console.log('Post saved to database:', data);
+                    console.log('Post saved to GitHub:', post.id);
                     return true;
                 } catch (error) {
-                    console.error('Error saving post to database:', error);
+                    console.error('Error saving post to GitHub:', error);
                     return false;
                 }
             }
 
             async deletePostFromDatabase(postId) {
                 try {
-                    const { error } = await this.supabase
-                        .from('posts')
-                        .delete()
-                        .eq('id', postId)
-                        .eq('is_draft', false);
+                    // Remove post from array and save to GitHub
+                    this.posts = this.posts.filter(p => p.id !== postId);
 
-                    if (error) throw error;
+                    // Save updated posts array to GitHub
+                    await this.githubStorage.savePosts(this.posts);
 
-                    console.log('Post deleted from database:', postId);
+                    console.log('Post deleted from GitHub:', postId);
                     return true;
                 } catch (error) {
-                    console.error('Error deleting post from database:', error);
+                    console.error('Error deleting post from GitHub:', error);
                     return false;
                 }
             }
