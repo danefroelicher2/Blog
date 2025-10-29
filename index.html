@@ -2311,6 +2311,10 @@
                 sessionStorage.setItem('githubToken', token);
             }
 
+            getToken() {
+                return this.token;
+            }
+
             async loadPosts() {
                 try {
                     const response = await fetch(
@@ -3755,8 +3759,8 @@
 
                     this.showSuccessMessage('Admin logged in successfully!');
 
-                    // Prompt for GitHub token for saving posts
-                    this.promptForGitHubToken();
+                    // Prompt for GitHub token for saving posts (DISABLED - Token now optional)
+                    // this.promptForGitHubToken();
 
                     this.logSecurityEvent('LOGIN_SUCCESS', 'Admin login successful');
                 } else {
@@ -4602,11 +4606,22 @@
                         this.drafts.push(draft);
                     }
 
-                    // Save drafts to GitHub
-                    await this.githubStorage.saveDrafts(this.drafts);
+                    // Try GitHub if token exists
+                    if (this.githubStorage && this.githubStorage.getToken()) {
+                        try {
+                            await this.githubStorage.saveDrafts(this.drafts);
+                            console.log('✅ Draft saved to GitHub:', draft.id);
+                        } catch (error) {
+                            console.warn('GitHub save failed, using localStorage:', error);
+                        }
+                    }
+
+                    // Always save to localStorage
+                    localStorage.setItem('blogDrafts', JSON.stringify(this.drafts));
+                    console.log('✅ Draft saved to localStorage:', draft.id);
                     return true;
                 } catch (error) {
-                    console.error('Error saving draft to GitHub:', error);
+                    console.error('Error saving draft:', error);
                     throw error;
                 }
             }
@@ -4687,29 +4702,34 @@
                 this.showSaveStatus('Saving posts...', false);
 
                 try {
-                    // Save all posts to GitHub
-                    await this.githubStorage.savePosts(this.posts);
-
-                    // Also save to localStorage as backup for offline mode
-                    localStorage.setItem('blogPosts', JSON.stringify(this.posts));
-                    this.showSaveStatus('✅ Saved successfully!', false);
-
-                } catch (error) {
-                    console.error('Error saving posts to GitHub:', error);
-                    // Fallback to localStorage only
-                    try {
-                        localStorage.setItem('blogPosts', JSON.stringify(this.posts));
-                        this.showSaveStatus('⚠️ Saved locally only - GitHub sync failed', true);
-                    } catch (fallbackError) {
-                        this.showSaveStatus('❌ Save failed completely', true);
+                    // Try GitHub if token exists
+                    if (this.githubStorage && this.githubStorage.getToken()) {
+                        try {
+                            await this.githubStorage.savePosts(this.posts);
+                            console.log(`✅ Saved ${this.posts.length} posts to GitHub`);
+                            this.showSaveStatus('✅ Posts saved to GitHub!', false);
+                        } catch (error) {
+                            console.warn('GitHub save failed:', error);
+                        }
                     }
+
+                    // Always save to localStorage
+                    localStorage.setItem('blogPosts', JSON.stringify(this.posts));
+
+                    if (!this.githubStorage || !this.githubStorage.getToken()) {
+                        this.showSaveStatus('✅ Posts saved locally!', false);
+                        console.log(`✅ Saved ${this.posts.length} posts to localStorage`);
+                    }
+                } catch (error) {
+                    console.error('Error saving posts:', error);
+                    this.showSaveStatus('❌ Save failed', true);
                 }
             }
 
             // Individual GitHub Post Operations
             async savePostToDatabase(post) {
                 try {
-                    // Update the post in the posts array and save to GitHub
+                    // Update the post in the posts array
                     const existingIndex = this.posts.findIndex(p => p.id === post.id);
                     if (existingIndex !== -1) {
                         this.posts[existingIndex] = post;
@@ -4717,13 +4737,22 @@
                         this.posts.push(post);
                     }
 
-                    // Save all posts to GitHub
-                    await this.githubStorage.savePosts(this.posts);
+                    // Try GitHub first if token exists
+                    if (this.githubStorage && this.githubStorage.getToken()) {
+                        try {
+                            await this.githubStorage.savePosts(this.posts);
+                            console.log('✅ Post saved to GitHub:', post.id);
+                        } catch (error) {
+                            console.warn('GitHub save failed, using localStorage:', error);
+                        }
+                    }
 
-                    console.log('Post saved to GitHub:', post.id);
+                    // Always save to localStorage as backup/primary
+                    localStorage.setItem('blogPosts', JSON.stringify(this.posts));
+                    console.log('✅ Post saved to localStorage:', post.id);
                     return true;
                 } catch (error) {
-                    console.error('Error saving post to GitHub:', error);
+                    console.error('Error saving post:', error);
                     return false;
                 }
             }
