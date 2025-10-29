@@ -12,7 +12,9 @@
       "Bash(git pull:*)",
       "Bash(git stash:*)",
       "Bash(git remote:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(git log:*)",
+      "Bash(git ls-tree:*)"
     ],
     "deny": [],
     "ask": []
