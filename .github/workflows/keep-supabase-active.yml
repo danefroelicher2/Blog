@@ -1,0 +1,35 @@
+name: Keep Supabase Active
+
+on:
+  schedule:
+    # Runs at 9:00 AM UTC every Monday and Thursday (twice per week)
+    - cron: '0 9 * * 1,4'
+  workflow_dispatch:
+    # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  ping-database:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping Supabase Database
+        run: |
+          echo "🔄 Pinging Supabase database to prevent inactivity pause..."
+
+          # Make a simple query to the posts table
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/posts?select=id&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_KEY }}")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n-1)
+
+          echo "Response Code: $HTTP_CODE"
+          echo "Response Body: $BODY"
+
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ Successfully pinged Supabase - database is active!"
+          else
+            echo "⚠️ Received status $HTTP_CODE - database may need attention"
+          fi
