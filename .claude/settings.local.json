@@ -14,7 +14,17 @@
       "Bash(git remote:*)",
       "Bash(cat:*)",
       "Bash(git log:*)",
-      "Bash(git ls-tree:*)"
+      "Bash(git ls-tree:*)",
+      "Bash(if [ -f \"data/posts.json\" ])",
+      "Bash(then rm -f \"data/posts.json\")",
+      "Bash(else echo \"data/posts.json does not exist\")",
+      "Bash(fi)",
+      "Bash(if [ -f \"data/drafts.json\" ])",
+      "Bash(then rm -f \"data/drafts.json\")",
+      "Bash(else echo \"data/drafts.json does not exist\")",
+      "Bash(if [ -d \"data\" ])",
+      "Bash(then rmdir data)",
+      "Bash(else echo \"data directory not empty or does not exist\")"
     ],
     "deny": [],
     "ask": []

@@ -2295,197 +2295,11 @@
     </div>
 
     <script>
-        // GitHub Storage Class - Manages posts in GitHub repository
-        class GitHubStorage {
-            constructor(owner, repo) {
-                this.owner = owner;
-                this.repo = repo;
-                this.token = sessionStorage.getItem('githubToken') || null;
-                this.postsPath = 'data/posts.json';
-                this.draftsPath = 'data/drafts.json';
-                this.apiBase = 'https://api.github.com';
-            }
-
-            setToken(token) {
-                this.token = token;
-                sessionStorage.setItem('githubToken', token);
-            }
-
-            getToken() {
-                return this.token;
-            }
-
-            async loadPosts() {
-                try {
-                    const response = await fetch(
-                        `${this.apiBase}/repos/${this.owner}/${this.repo}/contents/${this.postsPath}`,
-                        {
-                            headers: {
-                                'Accept': 'application/vnd.github.v3+json'
-                            }
-                        }
-                    );
-
-                    if (!response.ok) {
-                        throw new Error(`GitHub API error: ${response.status}`);
-                    }
-
-                    const data = await response.json();
-                    const content = atob(data.content);
-                    return JSON.parse(content);
-                } catch (error) {
-                    console.error('Error loading posts from GitHub:', error);
-                    throw error;
-                }
-            }
-
-            async loadDrafts() {
-                try {
-                    const response = await fetch(
-                        `${this.apiBase}/repos/${this.owner}/${this.repo}/contents/${this.draftsPath}`,
-                        {
-                            headers: {
-                                'Accept': 'application/vnd.github.v3+json'
-                            }
-                        }
-                    );
-
-                    if (!response.ok) {
-                        throw new Error(`GitHub API error: ${response.status}`);
-                    }
-
-                    const data = await response.json();
-                    const content = atob(data.content);
-                    return JSON.parse(content);
-                } catch (error) {
-                    console.error('Error loading drafts from GitHub:', error);
-                    return [];
-                }
-            }
-
-            async savePosts(posts) {
-                if (!this.token) {
-                    throw new Error('GitHub token required for saving posts');
-                }
-
-                try {
-                    // First, get the current file to get its SHA
-                    const getResponse = await fetch(
-                        `${this.apiBase}/repos/${this.owner}/${this.repo}/contents/${this.postsPath}`,
-                        {
-                            headers: {
-                                'Accept': 'application/vnd.github.v3+json',
-                                'Authorization': `token ${this.token}`
-                            }
-                        }
-                    );
-
-                    let sha = null;
-                    if (getResponse.ok) {
-                        const currentFile = await getResponse.json();
-                        sha = currentFile.sha;
-                    }
-
-                    // Encode content to base64
-                    const content = btoa(JSON.stringify(posts, null, 2));
-
-                    // Update or create the file
-                    const updateResponse = await fetch(
-                        `${this.apiBase}/repos/${this.owner}/${this.repo}/contents/${this.postsPath}`,
-                        {
-                            method: 'PUT',
-                            headers: {
-                                'Accept': 'application/vnd.github.v3+json',
-                                'Authorization': `token ${this.token}`,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                message: `Update posts - ${new Date().toISOString()}`,
-                                content: content,
-                                sha: sha
-                            })
-                        }
-                    );
-
-                    if (!updateResponse.ok) {
-                        const error = await updateResponse.json();
-                        throw new Error(`GitHub API error: ${error.message}`);
-                    }
-
-                    return true;
-                } catch (error) {
-                    console.error('Error saving posts to GitHub:', error);
-                    throw error;
-                }
-            }
-
-            async saveDrafts(drafts) {
-                if (!this.token) {
-                    throw new Error('GitHub token required for saving drafts');
-                }
-
-                try {
-                    // First, get the current file to get its SHA
-                    const getResponse = await fetch(
-                        `${this.apiBase}/repos/${this.owner}/${this.repo}/contents/${this.draftsPath}`,
-                        {
-                            headers: {
-                                'Accept': 'application/vnd.github.v3+json',
-                                'Authorization': `token ${this.token}`
-                            }
-                        }
-                    );
-
-                    let sha = null;
-                    if (getResponse.ok) {
-                        const currentFile = await getResponse.json();
-                        sha = currentFile.sha;
-                    }
-
-                    // Encode content to base64
-                    const content = btoa(JSON.stringify(drafts, null, 2));
-
-                    // Update or create the file
-                    const updateResponse = await fetch(
-                        `${this.apiBase}/repos/${this.owner}/${this.repo}/contents/${this.draftsPath}`,
-                        {
-                            method: 'PUT',
-                            headers: {
-                                'Accept': 'application/vnd.github.v3+json',
-                                'Authorization': `token ${this.token}`,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                message: `Update drafts - ${new Date().toISOString()}`,
-                                content: content,
-                                sha: sha
-                            })
-                        }
-                    );
-
-                    if (!updateResponse.ok) {
-                        const error = await updateResponse.json();
-                        throw new Error(`GitHub API error: ${error.message}`);
-                    }
-
-                    return true;
-                } catch (error) {
-                    console.error('Error saving drafts to GitHub:', error);
-                    throw error;
-                }
-            }
-        }
-
         class BlogApp {
             constructor() {
                 this.posts = [];
                 this.editingDraftId = null;
                 this.drafts = [];
-
-                // GitHub Configuration
-                this.githubOwner = 'danefroelicher2';
-                this.githubRepo = 'Blog';
-                this.githubStorage = null; // Will be initialized in init()
 
                 // Security Configuration
                 this.securityConfig = {
@@ -2526,22 +2340,8 @@
                 // checkExistingSession() already calls updateAdminUI() which sets correct mode
                 // This was causing admin panel to disappear on page reload despite valid auth
 
-                // Initialize GitHub storage
-                this.initGitHubStorage();
-
-                // Load posts from GitHub
+                // Load posts
                 this.initializePosts();
-            }
-
-            initGitHubStorage() {
-                try {
-                    // Initialize GitHub storage client
-                    this.githubStorage = new GitHubStorage(this.githubOwner, this.githubRepo);
-                    console.log('GitHub storage initialized successfully');
-                } catch (error) {
-                    console.error('Error initializing GitHub storage:', error);
-                    this.showErrorMessage('GitHub connection failed. Using offline mode.');
-                }
             }
 
             async initializePosts() {
@@ -3759,9 +3559,6 @@
 
                     this.showSuccessMessage('Admin logged in successfully!');
 
-                    // Prompt for GitHub token for saving posts (DISABLED - Token now optional)
-                    // this.promptForGitHubToken();
-
                     this.logSecurityEvent('LOGIN_SUCCESS', 'Admin login successful');
                 } else {
                     if (!this.recordLoginAttempt(false)) return;
@@ -3770,36 +3567,6 @@
                     document.getElementById('adminPassword').value = '';
                     document.getElementById('adminPassword').focus();
                 }
-            }
-
-            promptForGitHubToken() {
-                // Check if token already exists in sessionStorage
-                const existingToken = sessionStorage.getItem('githubToken');
-                if (existingToken) {
-                    // Token already exists, ask if user wants to update it
-                    if (!confirm('GitHub token already set. Do you want to update it?')) {
-                        return;
-                    }
-                }
-
-                // Prompt for GitHub Personal Access Token
-                const token = prompt(
-                    'Enter your GitHub Personal Access Token:\n\n' +
-                    'This token is needed to save posts to your GitHub repository.\n' +
-                    'Create one at: https://github.com/settings/tokens\n\n' +
-                    'Required permissions: repo (Full control of private repositories)\n\n' +
-                    'The token will be stored in your browser session only.'
-                );
-
-                if (token && token.trim()) {
-                    // Store the token in the GitHub storage instance
-                    this.githubStorage.setToken(token.trim());
-                    this.showSuccessMessage('GitHub token saved successfully!');
-                } else if (token !== null) {
-                    // User clicked OK but entered empty token
-                    this.showErrorMessage('GitHub token is required to save posts. You can set it later from the admin menu.');
-                }
-                // If user clicked Cancel (token === null), do nothing
             }
 
             // Activity Logging System
@@ -3932,10 +3699,6 @@
 
                         // Remove from drafts array
                         this.drafts = this.drafts.filter(d => d.id !== this.editingDraftId);
-
-                        // Save both to GitHub
-                        await this.githubStorage.savePosts(this.posts);
-                        await this.githubStorage.saveDrafts(this.drafts);
 
                         this.editingDraftId = null;
                         this.showSuccessMessage('Draft published successfully!');
@@ -4387,9 +4150,6 @@
                             this.drafts[index] = updatedDraft;
                         }
 
-                        // Save to GitHub
-                        await this.githubStorage.saveDrafts(this.drafts);
-
                         this.editingDraftId = null;
                         this.showSuccessMessage('Draft updated successfully!');
                     } else {
@@ -4427,13 +4187,13 @@
 
             async loadDrafts() {
                 try {
-                    // Load drafts from GitHub
-                    const data = await this.githubStorage.loadDrafts();
-                    this.drafts = data || [];
+                    // Load drafts from localStorage
+                    const data = localStorage.getItem('blogDrafts');
+                    this.drafts = data ? JSON.parse(data) : [];
 
                     this.displayDrafts(this.drafts);
                 } catch (error) {
-                    console.error('Error loading drafts from GitHub:', error);
+                    console.error('Error loading drafts from localStorage:', error);
                     this.showErrorMessage('Error loading drafts: ' + error.message);
                     this.displayDrafts([]);
                 }
@@ -4550,10 +4310,6 @@
                     // Remove from drafts array
                     this.drafts = this.drafts.filter(d => d.id !== draftId);
 
-                    // Save both to GitHub
-                    await this.githubStorage.savePosts(this.posts);
-                    await this.githubStorage.saveDrafts(this.drafts);
-
                     this.showSuccessMessage('Draft published successfully!');
                     this.loadDrafts();
                     await this.initializePosts();
@@ -4584,9 +4340,6 @@
                     // Remove draft from array
                     this.drafts = this.drafts.filter(d => d.id !== draftId);
 
-                    // Save updated drafts to GitHub
-                    await this.githubStorage.saveDrafts(this.drafts);
-
                     this.showSuccessMessage('Draft deleted successfully!');
                     this.loadDrafts();
 
@@ -4606,17 +4359,7 @@
                         this.drafts.push(draft);
                     }
 
-                    // Try GitHub if token exists
-                    if (this.githubStorage && this.githubStorage.getToken()) {
-                        try {
-                            await this.githubStorage.saveDrafts(this.drafts);
-                            console.log('✅ Draft saved to GitHub:', draft.id);
-                        } catch (error) {
-                            console.warn('GitHub save failed, using localStorage:', error);
-                        }
-                    }
-
-                    // Always save to localStorage
+                    // Save to localStorage
                     localStorage.setItem('blogDrafts', JSON.stringify(this.drafts));
                     console.log('✅ Draft saved to localStorage:', draft.id);
                     return true;
@@ -4626,25 +4369,9 @@
                 }
             }
 
-            // GitHub Storage Methods
+            // Storage Methods
             async loadPosts() {
-                try {
-                    this.showSaveStatus('Loading posts...', false);
-
-                    // Load posts from GitHub
-                    const data = await this.githubStorage.loadPosts();
-
-                    // Also save to localStorage as backup for offline mode
-                    localStorage.setItem('blogPosts', JSON.stringify(data));
-
-                    console.log('Posts loaded from GitHub:', data.length);
-                    return data || [];
-
-                } catch (error) {
-                    console.error('Error loading posts from GitHub:', error);
-                    // Fallback to localStorage for offline mode
-                    return this.loadPostsFromLocalStorage();
-                }
+                return this.loadPostsFromLocalStorage();
             }
 
             loadPostsFromLocalStorage() {
@@ -4698,35 +4425,17 @@
             }
 
             async savePosts() {
-                // Show loading state
-                this.showSaveStatus('Saving posts...', false);
-
                 try {
-                    // Try GitHub if token exists
-                    if (this.githubStorage && this.githubStorage.getToken()) {
-                        try {
-                            await this.githubStorage.savePosts(this.posts);
-                            console.log(`✅ Saved ${this.posts.length} posts to GitHub`);
-                            this.showSaveStatus('✅ Posts saved to GitHub!', false);
-                        } catch (error) {
-                            console.warn('GitHub save failed:', error);
-                        }
-                    }
-
-                    // Always save to localStorage
+                    // Save to localStorage
                     localStorage.setItem('blogPosts', JSON.stringify(this.posts));
-
-                    if (!this.githubStorage || !this.githubStorage.getToken()) {
-                        this.showSaveStatus('✅ Posts saved locally!', false);
-                        console.log(`✅ Saved ${this.posts.length} posts to localStorage`);
-                    }
+                    console.log(`✅ Saved ${this.posts.length} posts to localStorage`);
                 } catch (error) {
                     console.error('Error saving posts:', error);
-                    this.showSaveStatus('❌ Save failed', true);
+                    this.showErrorMessage('Error saving posts');
                 }
             }
 
-            // Individual GitHub Post Operations
+            // Individual Post Operations
             async savePostToDatabase(post) {
                 try {
                     // Update the post in the posts array
@@ -4737,17 +4446,7 @@
                         this.posts.push(post);
                     }
 
-                    // Try GitHub first if token exists
-                    if (this.githubStorage && this.githubStorage.getToken()) {
-                        try {
-                            await this.githubStorage.savePosts(this.posts);
-                            console.log('✅ Post saved to GitHub:', post.id);
-                        } catch (error) {
-                            console.warn('GitHub save failed, using localStorage:', error);
-                        }
-                    }
-
-                    // Always save to localStorage as backup/primary
+                    // Save to localStorage
                     localStorage.setItem('blogPosts', JSON.stringify(this.posts));
                     console.log('✅ Post saved to localStorage:', post.id);
                     return true;
@@ -4759,16 +4458,16 @@
 
             async deletePostFromDatabase(postId) {
                 try {
-                    // Remove post from array and save to GitHub
+                    // Remove post from array
                     this.posts = this.posts.filter(p => p.id !== postId);
 
-                    // Save updated posts array to GitHub
-                    await this.githubStorage.savePosts(this.posts);
+                    // Save updated posts array to localStorage
+                    localStorage.setItem('blogPosts', JSON.stringify(this.posts));
 
-                    console.log('Post deleted from GitHub:', postId);
+                    console.log('Post deleted from localStorage:', postId);
                     return true;
                 } catch (error) {
-                    console.error('Error deleting post from GitHub:', error);
+                    console.error('Error deleting post from localStorage:', error);
                     return false;
                 }
             }
