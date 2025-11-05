@@ -4155,6 +4155,7 @@
                 try {
                     if (this.editingDraftId) {
                         // Update existing draft
+                        console.log('📝 Editing existing draft with ID:', this.editingDraftId);
                         const updatedDraft = {
                             id: this.editingDraftId,
                             title: title,
@@ -4166,11 +4167,16 @@
                             dateString: this.formatDate(new Date())
                         };
 
+                        console.log('💾 Saving updated draft to database:', updatedDraft);
+
                         // Update in drafts array
                         const index = this.drafts.findIndex(d => d.id === this.editingDraftId);
                         if (index !== -1) {
                             this.drafts[index] = updatedDraft;
                         }
+
+                        // Save to Supabase database
+                        await this.saveDraftToDatabase(updatedDraft);
 
                         this.editingDraftId = null;
                         this.showSuccessMessage('Draft updated successfully!');
@@ -4261,12 +4267,16 @@
 
             async editDraft(draftId) {
                 try {
+                    console.log('✏️ Starting to edit draft with ID:', draftId);
+
                     // Find draft in local drafts array
                     const data = this.drafts.find(d => d.id === draftId);
 
                     if (!data) {
                         throw new Error('Draft not found');
                     }
+
+                    console.log('📄 Draft data loaded:', { id: data.id, title: data.title, wordCount: data.word_count });
 
                     // Fill the create post modal with draft data
                     document.getElementById('postTitle').value = data.title;
@@ -4296,6 +4306,7 @@
 
                     // Store the draft ID for updating
                     this.editingDraftId = draftId;
+                    console.log('🔖 Set editingDraftId to:', this.editingDraftId);
 
                     // Open the modal
                     this.openModal();
@@ -4392,8 +4403,16 @@
             async saveDraftToDatabase(draft) {
                 try {
                     console.log('💾 Saving draft to Supabase:', draft.id);
+                    console.log('📦 Draft object being saved:', {
+                        id: draft.id,
+                        title: draft.title,
+                        content_length: draft.content?.length,
+                        century: draft.century,
+                        word_count: draft.wordCount,
+                        updated_at: draft.lastModified
+                    });
 
-                    const { error } = await this.supabase
+                    const { data, error } = await this.supabase
                         .from('posts')
                         .upsert({
                             id: draft.id,
@@ -4408,7 +4427,8 @@
 
                     if (error) throw error;
 
-                    console.log('✅ Draft saved to Supabase:', draft.id);
+                    console.log('✅ Draft saved to Supabase successfully:', draft.id);
+                    console.log('📤 Supabase response:', data);
                     return true;
 
                 } catch (error) {
