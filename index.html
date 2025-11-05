@@ -4326,39 +4326,45 @@
 
             async publishDraft(draftId) {
                 try {
+                    console.log('📤 Publishing draft with ID:', draftId);
+
                     // Find the draft
                     const draft = this.drafts.find(d => d.id === draftId);
                     if (!draft) {
                         throw new Error('Draft not found');
                     }
 
+                    console.log('📄 Draft to publish:', { id: draft.id, title: draft.title });
+
                     const now = new Date();
                     const publishTimestamp = now.toISOString();
 
-                    // Convert draft to post
-                    const post = {
-                        id: draft.id,
-                        title: draft.title,
-                        content: draft.content,
-                        century: draft.century,
-                        timestamp: publishTimestamp,
-                        lastModified: publishTimestamp,
-                        wordCount: this.countWords(draft.content || ''),
-                        dateString: this.formatDate(now)
-                    };
+                    console.log('💾 Updating draft in Supabase to published post...');
 
-                    // Add to posts array
-                    this.posts.push(post);
+                    // Update the post in Supabase: change is_draft to false
+                    const { error } = await this.supabase
+                        .from('posts')
+                        .update({
+                            is_draft: false,
+                            created_at: publishTimestamp,
+                            updated_at: publishTimestamp
+                        })
+                        .eq('id', draftId);
 
-                    // Remove from drafts array
-                    this.drafts = this.drafts.filter(d => d.id !== draftId);
+                    if (error) throw error;
 
-                    this.showSuccessMessage('Draft published successfully!');
-                    this.loadDrafts();
+                    console.log('✅ Draft successfully published in Supabase');
+
+                    // Reload drafts (draft should disappear)
+                    await this.loadDrafts();
+
+                    // Reload posts (post should appear)
                     await this.initializePosts();
 
+                    this.showSuccessMessage('Draft published successfully!');
+
                 } catch (error) {
-                    console.error('Error publishing draft:', error);
+                    console.error('❌ Error publishing draft:', error);
                     this.showErrorMessage('Error publishing draft: ' + error.message);
                 }
             }
