@@ -2164,6 +2164,7 @@
         <div class="modal-content">
             <button class="close" id="closeModal">&times;</button>
             <h2>Create New Post</h2>
+            <div id="autoSaveIndicator" style="display: none; font-size: 0.85em; color: #888; margin-bottom: 10px;"></div>
             <form id="postForm">
                 <div class="form-group">
                     <label for="postTitle">Title</label>
@@ -2303,6 +2304,8 @@
                 this.posts = [];
                 this.editingDraftId = null;
                 this.drafts = [];
+                this.autoSaveTimer = null;
+                this.lastAutoSaveTime = null;
 
                 // Supabase Configuration
                 this.supabaseUrl = 'https://cehdeiggnmsaccdazvgm.supabase.co';
@@ -3150,6 +3153,7 @@
                 if (this.sessionTimer) clearTimeout(this.sessionTimer);
                 if (this.warningTimer) clearTimeout(this.warningTimer);
                 if (this.countdownInterval) clearInterval(this.countdownInterval);
+                if (this.autoSaveTimer) clearInterval(this.autoSaveTimer);
             }
 
             showTimeoutWarning() {
@@ -3322,30 +3326,9 @@
 
                 // Post view modal
                 closePostViewModal.addEventListener('click', () => this.closePostViewModal());
-                postViewModal.addEventListener('click', (e) => {
-                    if (e.target === postViewModal) {
-                        this.closePostViewModal();
-                    }
-                });
 
-                // Modal handling
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        this.closeModal();
-                    }
-                });
-
-                adminModal.addEventListener('click', (e) => {
-                    if (e.target === adminModal) {
-                        this.closeAdminModal();
-                    }
-                });
-
-                editModal.addEventListener('click', (e) => {
-                    if (e.target === editModal) {
-                        this.closeEditModal();
-                    }
-                });
+                // Modal handling - outside click removed
+                // Modals can only be closed via buttons now
 
                 document.addEventListener('keydown', (e) => {
                     if (e.key === 'Escape') {
@@ -3526,9 +3509,15 @@
                 modal.style.display = 'block';
                 document.getElementById('postTitle').focus();
                 document.body.style.overflow = 'hidden';
+
+                // Start auto-save timer
+                this.startAutoSaveTimer();
             }
 
             closeModal() {
+                // Stop auto-save timer
+                this.stopAutoSaveTimer();
+
                 const modal = document.getElementById('createPostModal');
                 modal.style.display = 'none';
                 document.getElementById('postForm').reset();
@@ -3539,6 +3528,9 @@
                 document.getElementById('postContent').style.height = 'auto';
                 document.body.style.overflow = 'auto';
                 this.editingDraftId = null;
+
+                // Hide auto-save indicator
+                this.hideAutoSaveIndicator();
             }
 
             openAdminModal() {
@@ -3555,6 +3547,113 @@
                 document.getElementById('adminLoginForm').reset();
                 document.getElementById('loginError').style.display = 'none';
                 document.body.style.overflow = 'auto';
+            }
+
+            // Auto-save timer methods
+            startAutoSaveTimer() {
+                // Clear any existing timer first
+                this.stopAutoSaveTimer();
+
+                // Set up 2-minute (120 seconds) auto-save interval
+                this.autoSaveTimer = setInterval(async () => {
+                    await this.performAutoSave();
+                }, 120000); // 120,000ms = 2 minutes
+
+                console.log('⏰ Auto-save timer started (2 minutes)');
+            }
+
+            stopAutoSaveTimer() {
+                if (this.autoSaveTimer) {
+                    clearInterval(this.autoSaveTimer);
+                    this.autoSaveTimer = null;
+                    this.lastAutoSaveTime = null;
+                    console.log('⏰ Auto-save timer stopped');
+                }
+            }
+
+            async performAutoSave() {
+                try {
+                    console.log('💾 Performing auto-save...');
+                    this.showAutoSaveIndicator('Auto-saving...');
+
+                    const title = document.getElementById('postTitle').value.trim() || 'Untitled Draft';
+                    const content = document.getElementById('postContent').value.trim();
+                    const category = document.getElementById('postCategory').value;
+                    const yearRange = document.getElementById('postCentury').value;
+                    const century = category === 'history' ? yearRange : category;
+
+                    if (this.editingDraftId) {
+                        // Update existing draft
+                        const draft = this.drafts.find(d => d.id === this.editingDraftId);
+                        if (draft) {
+                            draft.title = title;
+                            draft.content = content;
+                            draft.century = century;
+                            draft.word_count = this.countWords(content);
+                            draft.updated_at = new Date().toISOString();
+
+                            await this.saveDraftToDatabase(draft);
+
+                            const saveTime = new Date().toLocaleTimeString('en-US', {
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                hour12: true
+                            });
+                            this.lastAutoSaveTime = saveTime;
+                            this.showAutoSaveIndicator(`Last saved at ${saveTime}`);
+                            console.log('✅ Auto-save completed (existing draft updated)');
+                        }
+                    } else {
+                        // Create new draft
+                        const now = new Date();
+                        const draft = {
+                            id: Date.now(),
+                            title: title,
+                            content: content,
+                            century: century,
+                            timestamp: now.toISOString(),
+                            updated_at: now.toISOString(),
+                            word_count: this.countWords(content),
+                            date_string: this.formatDate(now),
+                            is_draft: true
+                        };
+
+                        await this.saveDraftToDatabase(draft);
+
+                        // Set editingDraftId so future auto-saves update this draft
+                        this.editingDraftId = draft.id;
+                        this.drafts.push(draft);
+
+                        const saveTime = new Date().toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true
+                        });
+                        this.lastAutoSaveTime = saveTime;
+                        this.showAutoSaveIndicator(`Last saved at ${saveTime}`);
+                        console.log('✅ Auto-save completed (new draft created)');
+                    }
+                } catch (error) {
+                    console.error('❌ Auto-save error:', error);
+                    this.showAutoSaveIndicator('Auto-save failed', true);
+                }
+            }
+
+            showAutoSaveIndicator(message, isError = false) {
+                const indicator = document.getElementById('autoSaveIndicator');
+                if (indicator) {
+                    indicator.textContent = message;
+                    indicator.style.display = 'block';
+                    indicator.style.color = isError ? '#d9534f' : '#888';
+                }
+            }
+
+            hideAutoSaveIndicator() {
+                const indicator = document.getElementById('autoSaveIndicator');
+                if (indicator) {
+                    indicator.style.display = 'none';
+                    indicator.textContent = '';
+                }
             }
 
             handleAdminLogin(e) {
