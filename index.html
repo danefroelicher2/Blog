@@ -3556,6 +3556,7 @@
 
                 // Set up 2-minute (120 seconds) auto-save interval
                 this.autoSaveTimer = setInterval(async () => {
+                    console.log('⏰ 2-minute interval triggered, executing auto-save...');
                     await this.performAutoSave();
                 }, 120000); // 120,000ms = 2 minutes
 
@@ -3573,14 +3574,32 @@
 
             async performAutoSave() {
                 try {
-                    console.log('💾 Performing auto-save...');
+                    const now = new Date();
+                    const timeString = now.toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: true
+                    });
+
+                    console.log(`🕐 Auto-save triggered at ${timeString}`);
                     this.showAutoSaveIndicator('Auto-saving...');
 
+                    // Gather form data
                     const title = document.getElementById('postTitle').value.trim() || 'Untitled Draft';
                     const content = document.getElementById('postContent').value.trim();
                     const category = document.getElementById('postCategory').value;
                     const yearRange = document.getElementById('postCentury').value;
                     const century = category === 'history' ? yearRange : category;
+                    const wordCount = this.countWords(content);
+
+                    console.log('📝 Auto-save data:', {
+                        title: title,
+                        content_length: content.length,
+                        century: century,
+                        word_count: wordCount,
+                        editingDraftId: this.editingDraftId
+                    });
 
                     if (this.editingDraftId) {
                         // Update existing draft
@@ -3589,52 +3608,58 @@
                             draft.title = title;
                             draft.content = content;
                             draft.century = century;
-                            draft.word_count = this.countWords(content);
-                            draft.updated_at = new Date().toISOString();
+                            draft.wordCount = wordCount;
+                            draft.lastModified = now.toISOString();
 
-                            await this.saveDraftToDatabase(draft);
+                            console.log(`💾 Calling saveDraftToDatabase with draft ID: ${draft.id}`);
+                            const result = await this.saveDraftToDatabase(draft);
+                            console.log('💾 saveDraftToDatabase result:', result);
 
-                            const saveTime = new Date().toLocaleTimeString('en-US', {
+                            const saveTime = now.toLocaleTimeString('en-US', {
                                 hour: 'numeric',
                                 minute: '2-digit',
                                 hour12: true
                             });
                             this.lastAutoSaveTime = saveTime;
                             this.showAutoSaveIndicator(`Last saved at ${saveTime}`);
-                            console.log('✅ Auto-save completed (existing draft updated)');
+                            console.log(`✅ Auto-save completed successfully (existing draft ${draft.id} updated)`);
+                        } else {
+                            console.warn(`⚠️ Could not find draft with ID ${this.editingDraftId} in drafts array`);
                         }
                     } else {
                         // Create new draft
-                        const now = new Date();
-                        const draft = {
+                        const newDraft = {
                             id: Date.now(),
                             title: title,
                             content: content,
                             century: century,
                             timestamp: now.toISOString(),
-                            updated_at: now.toISOString(),
-                            word_count: this.countWords(content),
-                            date_string: this.formatDate(now),
+                            lastModified: now.toISOString(),
+                            wordCount: wordCount,
+                            dateString: this.formatDate(now),
                             is_draft: true
                         };
 
-                        await this.saveDraftToDatabase(draft);
+                        console.log(`💾 Calling saveDraftToDatabase with new draft ID: ${newDraft.id}`);
+                        const result = await this.saveDraftToDatabase(newDraft);
+                        console.log('💾 saveDraftToDatabase result:', result);
 
                         // Set editingDraftId so future auto-saves update this draft
-                        this.editingDraftId = draft.id;
-                        this.drafts.push(draft);
+                        this.editingDraftId = newDraft.id;
+                        this.drafts.push(newDraft);
 
-                        const saveTime = new Date().toLocaleTimeString('en-US', {
+                        const saveTime = now.toLocaleTimeString('en-US', {
                             hour: 'numeric',
                             minute: '2-digit',
                             hour12: true
                         });
                         this.lastAutoSaveTime = saveTime;
                         this.showAutoSaveIndicator(`Last saved at ${saveTime}`);
-                        console.log('✅ Auto-save completed (new draft created)');
+                        console.log(`✅ Auto-save completed successfully (new draft ${newDraft.id} created)`);
                     }
                 } catch (error) {
-                    console.error('❌ Auto-save error:', error);
+                    console.error('❌ Auto-save failed:', error);
+                    console.error('❌ Error stack:', error.stack);
                     this.showAutoSaveIndicator('Auto-save failed', true);
                 }
             }
