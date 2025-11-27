@@ -1,35 +1,74 @@
-name: Keep Supabase Active
+name: Keep Supabase Active with Real Activity
 
 on:
   schedule:
-    # Runs at 9:00 AM UTC every Monday and Thursday (twice per week)
     - cron: '0 9 * * 1,4'
   workflow_dispatch:
-    # Allows manual trigger from GitHub Actions tab
 
 jobs:
-  ping-database:
+  keep-active:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Ping Supabase Database
+      - name: Perform Real Database Activity
         run: |
-          echo "🔄 Pinging Supabase database to prevent inactivity pause..."
+          echo "🔄 Performing real database activity to prevent Supabase pause..."
 
-          # Make a simple query to the posts table
-          RESPONSE=$(curl -s -w "\n%{http_code}" \
-            -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/posts?select=id&limit=1" \
+          echo "📖 Looking for test post with title 'test'..."
+          GET_RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/posts?select=id,title,content&title=eq.test&limit=1" \
             -H "apikey: ${{ secrets.SUPABASE_KEY }}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_KEY }}")
 
-          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-          BODY=$(echo "$RESPONSE" | head -n-1)
+          GET_HTTP_CODE=$(echo "$GET_RESPONSE" | tail -n1)
+          GET_BODY=$(echo "$GET_RESPONSE" | head -n-1)
 
-          echo "Response Code: $HTTP_CODE"
-          echo "Response Body: $BODY"
+          echo "Get Response Code: $GET_HTTP_CODE"
+          echo "Get Response Body: $GET_BODY"
 
-          if [ "$HTTP_CODE" = "200" ]; then
-            echo "✅ Successfully pinged Supabase - database is active!"
+          if [ "$GET_HTTP_CODE" != "200" ]; then
+            echo "⚠️ Failed to fetch test post - Status: $GET_HTTP_CODE"
+            exit 1
+          fi
+
+          POST_ID=$(echo "$GET_BODY" | grep -o '"id":[0-9]*' | head -1 | grep -o '[0-9]*')
+          CURRENT_CONTENT=$(echo "$GET_BODY" | sed -n 's/.*"content":"\([^"]*\)".*/\1/p')
+
+          if [ -z "$POST_ID" ]; then
+            echo "❌ Test post with title 'test' not found!"
+            exit 1
+          fi
+
+          echo "✅ Found test post with ID: $POST_ID"
+          echo "📝 Current content: $CURRENT_CONTENT"
+
+          if [ -z "$CURRENT_CONTENT" ]; then
+            NEW_CONTENT="1"
           else
-            echo "⚠️ Received status $HTTP_CODE - database may need attention"
+            NUM_COUNT=$(echo "$CURRENT_CONTENT" | tr -cd ',' | wc -c)
+            NEXT_NUM=$((NUM_COUNT + 2))
+            NEW_CONTENT="${CURRENT_CONTENT},${NEXT_NUM}"
+          fi
+
+          echo "📝 New content will be: $NEW_CONTENT"
+
+          CURRENT_TIME=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")
+          ESCAPED_CONTENT=$(echo "$NEW_CONTENT" | sed 's/"/\\"/g')
+
+          UPDATE_RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X PATCH "${{ secrets.SUPABASE_URL }}/rest/v1/posts?id=eq.$POST_ID" \
+            -H "apikey: ${{ secrets.SUPABASE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=minimal" \
+            -d "{\"content\":\"$ESCAPED_CONTENT\",\"updated_at\":\"$CURRENT_TIME\"}")
+
+          UPDATE_HTTP_CODE=$(echo "$UPDATE_RESPONSE" | tail -n1)
+
+          if [ "$UPDATE_HTTP_CODE" = "204" ] || [ "$UPDATE_HTTP_CODE" = "200" ]; then
+            echo "✅ Successfully updated test post!"
+            echo "📊 Old content: $CURRENT_CONTENT → New content: $NEW_CONTENT"
+          else
+            echo "⚠️ Update failed with status $UPDATE_HTTP_CODE"
+            exit 1
           fi
