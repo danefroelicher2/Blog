@@ -25,7 +25,9 @@
       "Bash(if [ -d \"data\" ])",
       "Bash(then rmdir data)",
       "Bash(else echo \"data directory not empty or does not exist\")",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(gh workflow run:*)",
+      "Bash(where gh:*)"
     ],
     "deny": [],
     "ask": []
