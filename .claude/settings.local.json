@@ -27,7 +27,8 @@
       "Bash(else echo \"data directory not empty or does not exist\")",
       "Bash(cp:*)",
       "Bash(gh workflow run:*)",
-      "Bash(where gh:*)"
+      "Bash(where gh:*)",
+      "Bash(gh run list:*)"
     ],
     "deny": [],
     "ask": []
